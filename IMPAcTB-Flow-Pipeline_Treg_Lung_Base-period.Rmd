@@ -1,0 +1,720 @@
+---
+title: "IMPAcTB Day 14 testing data and stats"
+author: "Pablo Maldonado"
+date: "6/8/2023"
+output:
+  html_document: default
+  word_document: default
+  pdf_document: default
+editor_options:
+  chunk_output_type: inline
+---
+
+```{r global options}
+knitr::opts_chunk$set(echo = TRUE, error = FALSE, message = FALSE, warning = FALSE)
+
+```
+
+## Loading packages
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(jtools)
+library(readxl)
+library(ggplot2)
+library(RColorBrewer)
+library(dplyr)
+library(tidyverse)
+library(scales)
+library(stringr)
+library(tidyr)
+library(knitr)
+library(forcats)
+library(broom)
+library(ggfortify)
+library(stats)
+library(ggpubr)
+library(grDevices)
+library(rstatix)
+library(writexl)
+library(purrr)
+library(kableExtra)
+library(ggbeeswarm)
+library(multcomp)
+library(DescTools)
+library(car)
+library(exactRankTests)
+library(readr)
+library(ggeffects)
+library(GGally)
+library(gridExtra)
+library(emmeans)
+library(viridis)
+#mm7qNhXs8FN4CFS
+
+citation("ggeffects")
+packageVersion("ggeffects")
+
+citation("tidyr")
+packageVersion("ggplot2")
+```
+
+MULTI CSV SHEETS MALE FEMALE
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Read in all CSV files
+files <- list.files(path = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Base_period_Treg", pattern = "*.csv", full.names = TRUE)
+
+dfs <- lapply(files, function(file) {
+  # Read the CSV file and clean up column names
+  df <- read_csv(file)
+    df <- df %>%
+    rename("Sample" = colnames(.)[1]) %>%
+    dplyr::select(Sample, contains("Count")) %>%
+    rename_all(funs(str_replace(., "\\|.+", ""))) %>%
+    rename_all(~ str_remove(., "Leukocytes/Single Cells/")) %>%
+    rename_all(~ str_remove(., "Leukocytes/")) %>%
+    rename_all(~ str_remove(., "LIVE/")) %>%
+    # mutate(Sample = str_replace_all(Sample, "\\b[A-Za-z][0-9]+\\b", "")) %>%
+    rename_all(funs(str_replace_all(., ",", ""))) %>%
+    rename_all(funs(str_replace_all(., "/", " "))) %>%
+    rename_all(funs(str_replace_all(., "\\\\", " ")))  %>%
+    rename_all(~ stringr::str_replace_all(., "Q\\d+\\:", "")) %>%
+    rename("cells in sample" := matches("Count")) %>%
+    rename("leukocytes" := matches("Leukocytes")) %>%
+    rename("live leukocytes" := matches("LIVE")) %>%
+    rename("single cells" := matches("Single Cells")) %>%
+  # Removing logical vectors, not sure why its adding these
+  dplyr::select(where(~ !any(is.logical(.)) | is.numeric(.))) %>%
+  # Remove last two rows of SD and Mean
+  slice(1:(n() - 2))
+  # Extract the sex from the file name
+  sex <- ifelse(grepl("female", file), "female", "male")
+  df <- df %>% mutate(sex = sex)
+  # Move the sex column to the second position
+  df <- df %>% relocate(sex, .after = 1)
+  # Extract the day from the file name
+  day <- str_extract(file, "(?<=Day\\s)\\d+")
+  df <- df %>% mutate(day = as.character(day))
+  # Move the day column to the third position
+  df <- df %>% relocate(day, .after = 2)
+  
+  return(df)
+})
+
+# Combine all data frames into one dataframe
+Df1 <- bind_rows(dfs)
+Df1
+
+#str(dfs)
+#tail(Df1)
+
+# Check for NA values in Df1
+#na_counts <- colSums(is.na(Df1))
+
+# Print the column names with NA counts
+#print(na_counts)
+Df1
+
+# barbering, fighting, UD, injury, new cage, euthanize, illness
+```
+
+## MAKING DATA TIDY
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+#tidy_Df1 <- pivot_longer(data = Df1, cols =  starts_with("CD3"), names_to = "cell_types", values_to = "cell type count")
+
+tidy_Df1 <- pivot_longer(data = Df1, 
+                          cols = starts_with("CD3") | starts_with("live") | starts_with(" NK1.1"), 
+                          names_to = "cell_types", 
+                          values_to = "cell type count")
+
+tidy_Df1 <- tidy_Df1 %>%
+  separate(col = "Sample", into = c("group", "mouse_ID"), sep = "_") %>%
+  mutate(mouse_ID = str_replace(mouse_ID, ".fcs", ""))
+
+# Trim extra spaces
+tidy_Df1$cell_types <- str_replace_all(tidy_Df1$cell_types, "\\s+", " ")
+tidy_Df1$cell_types <- str_trim(tidy_Df1$cell_types)
+tidy_Df1$group <- trimws(tidy_Df1$group)
+
+# Fix Group Column
+tidy_Df1 <- tidy_Df1 %>%
+  mutate(group = gsub("^[A-Za-z]\\d{1,2}\\s", "", group))
+tidy_Df1$group <- str_replace_all(tidy_Df1$group, "-", " ")
+
+
+tidy_Df1 
+```
+
+## Insert trials and successes (cell counts and parent populations)
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Filter CD3+ CD4+, CD3+ CD4+ CD62L- CD44+ to find trials and successes
+# tidy_Df1$cell_types [3]
+
+###
+t_cell_activation <- tidy_Df1 %>%
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4+ CD8- CD62L- CD44+") 
+
+t_cell_activation <- t_cell_activation %>%
+  pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
+  rename(trials = "live leukocytes", successes = "CD3+ CD4+ CD8- CD62L- CD44+") %>%
+  mutate(failures = trials - successes) %>%
+  dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
+
+
+
+# Recode the condition and group names
+t_cell_activation$group <- factor(t_cell_activation$group, levels = c("Saline", "BCG", "ID93", "BCG+ID93"))
+
+t_cell_activation <- t_cell_activation %>%
+  mutate(group = ifelse(group == "ID93", "ID93-GLA-SE",
+                       ifelse(group == "BCG+ID93", "BCG+ID93-GLA-SE",
+                              ifelse(group == "Saline", "Saline",
+                                     ifelse(group == "BCG", "BCG", group)))))
+
+
+
+t_cell_activationPLOT <- t_cell_activation %>%
+  mutate(proportion_of_activated_tcells = (successes/trials*100)) 
+t_cell_activationHIST <- t_cell_activation
+t_cell_activationF1_Score <- t_cell_activation %>%
+  mutate(proportion_of_activated_tcells = (successes/trials)) 
+
+t_cell_activation
+```
+
+
+# Set reference group
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Convert 'result' into a factor data type.
+t_cell_activation$successes <- as.numeric(t_cell_activation$successes)
+# Convert 'group' into a factor data type.
+t_cell_activation$group <- factor(t_cell_activation$group)
+# Convert 'day' into a factor data type.
+t_cell_activation$day <- as.factor(t_cell_activation$day)
+t_cell_activation$failures <- as.numeric(t_cell_activation$failures)
+t_cell_activation$sex <- as.factor(t_cell_activation$sex)
+
+# Reorder groups for visuals
+t_cell_activation <- t_cell_activation %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) #%>%
+  #mutate(day = ifelse(day == 1, -1, day))
+  
+t_cell_activation$group <- relevel(t_cell_activation$group, ref = "Saline")
+```
+
+
+
+Distribution of cell phenotype per mouse and checking for normality
+```{r}
+# # Convert successes to numeric (if it's not already numeric)
+t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
+
+
+# Reorder groups for visuals
+t_cell_activationHIST <- t_cell_activationHIST %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
+t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
+
+
+ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
+  geom_histogram(binwidth = 500, color = "black") +
+  scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
+  labs(y = "Frequency", x = "Activated T Cells") +  
+  theme_minimal() +
+    theme(
+    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.text = element_text(color = "black", size = 11),
+    legend.title = element_text(color = "black", size = 11)) 
+
+ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
+  geom_histogram(binwidth = 750, color = "black") +
+  scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
+  labs(y = "Frequency", x = "Activated T Cells") +  
+  facet_wrap(~ group) +# Add Y-axis title
+  theme_minimal()
+
+subset(t_cell_activationHIST, sex == "male" & group == "Saline")
+subset(t_cell_activationHIST, group == "BCG")
+
+shapiro.test(t_cell_activationHIST$successes)
+
+# Check normality of groups
+shapiro_results <- tapply(t_cell_activationHIST$successes, t_cell_activationHIST$group, shapiro.test)
+# Check normality of groups + sex
+shapiro_results_by_sex <- tapply(t_cell_activationHIST$successes, 
+                          interaction(t_cell_activationHIST$group, t_cell_activationHIST$sex), 
+                          shapiro.test)
+# Print the results
+shapiro_results
+shapiro_results_by_sex
+
+subset(t_cell_activationHIST, sex == "male")
+subset(t_cell_activationHIST, sex == "female")
+```
+
+
+
+
+$$
+log(1−pp)=β0+β1χ1+β2χ2+β3χ3+β4χ4+β5χ5+β6χ6+β7(χ1χ4)+β8(χ2χ4)+β9(χ3χ4)+β10(χ1χ5)+β11(χ2χ5)+β12(χ3χ5)+β13(χ1χ6)+β14(χ2χ6)+β15(χ3χ6)+β16(χ4χ6)+β17(χ5χ6)+β18(χ1χ4χ6)+β19(χ2χ4χ6)+β20(χ3χ4χ6)+β21(χ1χ5χ6)+β22(χ2χ5χ6)+β23(χ3χ5χ6)
+$$
+
+## GLM modeling for: group * day + sex | group * day * sex | group * day
+```{r echo=TRUE}
+
+l_mod2 <- glm(cbind(successes, failures) ~ group * day + sex, 
+              family = quasibinomial(link = "logit"), data = t_cell_activation)
+summary(l_mod2)
+# accounting for sex
+
+
+l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
+              family = quasibinomial(link = "logit"), data = t_cell_activation)
+summary(l_mod1)
+
+# l_mod11 <- glm(cbind(successes, failures) ~ group * day * sex,
+#               family = binomial(link = "logit"), data = t_cell_activation)
+# summary(l_mod11)
+```
+```{r}
+# Extract coefficients, standard errors, p-values, and significance levels
+coefficients <- coef(summary(l_mod1))
+coefficients <- as.data.frame(coefficients)
+
+# Rename columns
+colnames(coefficients) <- c("Estimate", "Std.Error", "t.value", "Pr(>|t|)") 
+
+coefficients %>% 
+    rownames_to_column('Predicting Variable')
+
+# Add significance level column
+coefficients$Significance <- ifelse(coefficients$`Pr(>|t|)` < 0.001, "***",
+                             ifelse(coefficients$`Pr(>|t|)` < 0.01, "**",
+                             ifelse(coefficients$`Pr(>|t|)` < 0.05, "*",
+                             ifelse(coefficients$`Pr(>|t|)` < 0.1, ".", ""))))
+
+coefficients <- coefficients %>% 
+    rownames_to_column('Predicting Variable')
+
+# Print the dataframe
+print(coefficients)
+```
+
+## Model diagnostics 
+
+# Drop-in-deviance test to compare models
+# The Likelihood Ratio Test compares the fit of two nested models by examining the difference in their log-likelihoods or deviances. It is commonly used to assess the significance of adding or removing predictor variables from a model
+```{r echo=TRUE}
+# Perform Likelihood Ratio Test
+drop_in_dev1 <- anova(l_mod2, l_mod1, test = "Chisq")
+
+drop_in_dev1
+
+```
+
+# This summary outlines the calculation and interpretation of the ratio of deviance explained by a GLM model (l_mod1) to the null deviance:
+calculate the ratio of deviance explained by the model to the null deviance.
+The ratio is calculated by dividing the deviance explained by the model by the null deviance.
+The null deviance represents the deviance when no predictors are included in the model, essentially fitting a model with only an intercept.
+The deviance of the model is the difference between the null deviance and the deviance after fitting the model.
+This ratio provides insight into the proportion of deviance explained by the predictors included in the model relative to the total deviance in the null model, ranging from 0 to 1.
+A higher ratio indicates that a larger proportion of the deviance is explained by the predictors in the model.
+
+```{r}
+1- (l_mod1$deviance/l_mod1$null.deviance)
+1- (l_mod2$deviance/l_mod2$null.deviance)
+```
+# To determine the better model, we compare the ratios of deviance explained by each model. In this case, l_mod1 has a higher ratio (approximately 56.63%) compared to l_mod2 (approximately 42.51%), indicating that l_mod1 is the better model.
+In summary, l_mod1 is considered the better model based on the ratios of deviance explained relative to the null deviance
+
+
+# Residual Plots
+```{r echo=TRUE}
+# Create a residual vs fitted plot
+residuals <- residuals(l_mod1)
+
+dev_res <- residuals(l_mod1, type = "deviance")
+fitted_values <- fitted(l_mod1)
+
+# Create the residuals vs. fitted plot
+plot(fitted_values, dev_res, main = "Residuals vs. Fitted", 
+     xlab = "Fitted Values", ylab = "Residuals")
+
+# Add a horizontal reference line at y = 0 (optional)
+abline(h = 0, col = "red", lty = 2)
+
+# Create a QQ plot of deviance residuals
+qqnorm(residuals)
+qqline(residuals)
+
+```
+
+## GLM modeling and plotting expected outcomes of group * day + sex
+```{r echo=TRUE}
+#Plot and interpret effects
+# plotGroup <- effect_plot(l_mod1, pred = group, interval = TRUE, y.label = "Probability of Activated T-cells")
+# plotSex <- effect_plot(l_mod1, pred = sex, interval = TRUE, y.label = "Probability of Activated T-cells")
+# plotDay <- effect_plot(l_mod1, pred = day, interval = TRUE, y.label = "Probability of Activated T-cells")
+# 
+# grid.arrange(plotGroup, plotSex, plotDay, ncol = 3)
+# 
+# 
+# 
+# t_cell_activation
+# Calculate the probabilities for all combinations using testMod
+
+capitalize_labels <- function(variable) {
+  return(paste0(toupper(substring(variable, 1, 1)), substring(variable, 2)))
+}
+
+combinations <- expand.grid(sex = levels(t_cell_activation$sex),
+                            day = levels(t_cell_activation$day),
+                            group = levels(t_cell_activation$group))
+
+results <- combinations %>%
+  rowwise() %>%
+  mutate(probability = (round(100 * predict(l_mod1, newdata = data.frame(sex, day, group), type = "response"))))
+
+# Create a heatmap
+Treg_probability_heatmap <- ggplot(results, aes(x = day, y = group)) +
+  geom_tile(aes(fill = probability)) +
+  facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
+  scale_fill_viridis_c(name = "Probability of Activated T-cells", labels = function(x) paste0(x, "%")) +# Add 5 to each label
+  theme_minimal() +
+  labs(x = "Day", y = "Group", fill = "Probability of Activated T-cells") +
+  theme(
+    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.text = element_text(color = "black", size = 11),
+    legend.title = element_text(color = "black", size = 11))  # Adjust the font size as needed
+
+
+Treg_probability_heatmap
+
+# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Treg_probability_heatmap.pdf",   # The directory you want to save the file in
+#     width = 8, # The width of the plot in inches
+#     height = 5) # The height of the plot in inches
+# print(Treg_probability_heatmap)
+# dev.off()
+
+
+```
+
+
+
+
+
+```{r}
+#plot coefficients
+coefficients <- summary(l_mod1)$coefficients[, c("Estimate", "Std. Error")]
+
+# Create a data frame
+coefficients_df <- data.frame(
+  Variable = rownames(coefficients),
+  Estimate = coefficients[, "Estimate"],
+  SE = coefficients[, "Std. Error"]
+)
+
+# plot it
+CoefficientsandConfidence_Intervals_Treg <- ggplot(coefficients_df, aes(x = reorder(Variable, Estimate), y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  coord_flip() +
+  labs(title = "Coefficients and Confidence Intervals",
+       x = "Variable",
+       y = "Estimated Coefficient") +
+  theme_bw()
+
+CoefficientsandConfidence_Intervals_Treg
+
+# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/CoefficientsandConfidence_Intervals_Treg.pdf",   # The directory you want to save the file in
+#     width = 8, # The width of the plot in inches
+#     height = 5) # The height of the plot in inches
+# print(CoefficientsandConfidence_Intervals_Treg)
+# dev.off()
+```
+
+
+
+# Predicted probabilities for all variables
+```{r}
+
+# Define custom colors with reduced opacity
+#custom_colors <- c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))
+  #scale_fill_manual(values = custom_colors) +
+  #scale_color_manual(values = custom_colors) +
+
+# Generate predictions
+predictor_terms <- c("day", "group", "sex")
+predictions <- ggpredict(l_mod1, terms = predictor_terms)
+#predictions1 <- ggemmeans(l_mod2, terms = predictor_terms)
+
+#predict(l_mod1, type = "response")
+#predictions
+
+
+plot(predictions) +
+  scale_color_viridis_d(name = "Vaccine") +  
+  scale_fill_viridis_d(name = "Vaccine") +  
+  geom_point(position = position_jitterdodge(), size = 3, alpha = 0.7, width = 0.3) +
+  theme_bw()
+
+
+Treg_predictions <- ggplot(predictions, aes(x = x, y = predicted, group = group, color = group, fill = group)) +
+  geom_point(position = position_dodge(width = 0.3), size = 3, alpha = .9) +
+  geom_line(aes(group = group), size = .5, alpha = 1) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, position = position_dodge(width = 0.3)) +
+  scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
+  scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
+  labs(x = "Day", y = "Probability of Activated T Cells", fill = "Vaccine", color = "Vaccine") +
+  facet_wrap(~ facet) +
+  theme_bw() +
+  scale_y_continuous(labels = scales::percent, breaks = seq(0, .25, by = 0.05), limits = c(0, .25))
+
+Treg_predictions
+
+#save to pdf
+# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Treg_predictions.pdf",   # The directory you want to save the file in
+#     width = 10, # The width of the plot in inches
+#     height = 5) # The height of the plot in inches
+# print(Treg_predictions)
+# dev.off()
+```
+
+
+
+# Calculate the odds ratios and plot 
+```{r echo=TRUE}
+CI <- exp(confint(l_mod1))
+# Extract coefficients
+coefficients <- summary(l_mod1)$coef
+
+# Define a significance threshold (e.g., 0.05)
+significance_threshold <- 0.05
+
+# Filter significant coefficients
+significant_coefficients <- coefficients[coefficients[, 4] < significance_threshold, ]
+
+# Calculate odds ratios
+odds_ratios <- exp(significant_coefficients[, 1])
+
+# Add variable names for interpretation
+odds_ratios <- data.frame(
+  Odds_Ratio = odds_ratios)
+
+
+
+odds_ratios <- as.data.frame(odds_ratios) %>% 
+    rownames_to_column('Variable')
+CI_df <- as.data.frame(CI) %>%
+    rownames_to_column('Variable')
+
+
+odds_ratios <- inner_join(odds_ratios, CI_df, by = "Variable")
+odds_ratios$Variable <- gsub("^group", "", odds_ratios$Variable)
+odds_ratios <- odds_ratios %>%
+  filter(Variable != "(Intercept)")
+
+odds_ratios
+```
+
+
+
+```{r echo=TRUE}
+
+# Extract the CI values
+variables <- odds_ratios[, 1] 
+odds_ratio <- odds_ratios[, 2]
+lower_ci <- odds_ratios[, 3] 
+upper_ci <- odds_ratios[, 4]
+
+
+odds_data <- data.frame(
+  variables = variables,
+  odds_ratio = odds_ratio,
+  lower_ci = lower_ci,
+  upper_ci = upper_ci)
+
+# Reorder the order of "odds_ratios"
+odds_data$variables <- factor(odds_data$variables, levels = odds_data$variables[order(odds_data$odds_ratio)])
+
+# Create a plot
+
+Treg_significant_odds_ratios <- ggplot(odds_data, aes(x = odds_ratio, y = variables)) +
+  geom_point(color = "black", size = 3) +
+  geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0, color = "black") +
+  labs(title = " ",
+       x = "Odds of Activated T Cells",
+       y = "Variable") +
+  scale_x_continuous(breaks = c(0, 1, 2, 5, 10, 15)) +
+  geom_text(aes(label = round(odds_ratio, 2)), vjust = -0.5, color = "black") +
+  theme_minimal() +
+  theme(plot.title = element_text(size = 14, face = "bold"),
+        axis.title = element_text(size = 12),
+        axis.text = element_text(size = 10),
+        axis.line = element_line(color = "black"))
+
+Treg_significant_odds_ratios
+
+
+
+
+# #save to pdf
+# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Treg_significant_odds_ratios.pdf",   # The directory you want to save the file in
+#     width = 8, # The width of the plot in inches
+#     height = 5) # The height of the plot in inches
+# print(Treg_significant_odds_ratios)
+# dev.off()
+```
+
+
+# Plot actual CD4+ CD44+ populations for comparison to predicited outcomes
+```{r}
+Treg_activationPLOT <- t_cell_activationPLOT  %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
+  ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
+  geom_boxplot(width = 0.5, alpha = 0.7, position = position_dodge(width = 0.75)) +
+  geom_point(size = 3, shape = 21, alpha = 0.9, na.rm = TRUE, color = "black",
+             position = position_dodge(width = 0.75)) +
+    scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
+  scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
+  # scale_fill_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
+  # scale_color_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
+  facet_wrap(~ sex, ncol = 2) +
+  labs(title = "Activated T Cells in Mtb Infected Lung", x = "Days Post Infection", y = "Percentage of Live", color = "Vaccine") +
+  #guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
+  theme_bw() + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.2 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.2 * rel(1)),
+    legend.text = element_text(color = "black", size = .9 * rel(1)),
+    legend.title = element_text(color = "black", size = 1 * rel(1))) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1))
+
+Treg_activationPLOT
+
+# #save to pdf
+# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Treg_activationPLOT.pdf",   # The directory you want to save the file in
+#    width = 10, # The width of the plot in inches
+#    height = 5) # The height of the plot in inches
+# print(Treg_activationPLOT)
+# dev.off()
+
+```
+
+```{r}
+# em_means <- emmeans(l_mod2, specs = ~ group * day + sex)
+# 
+# # Perform pairwise comparisons using Tukey's method
+# pairwise_comparisons <- emmeans::contrast(em_means, method = "pairwise", adjust = "tukey")
+# 
+# pairwise_comparisons <- as.data.frame(pairwise_comparisons)
+# 
+# # View the results of the pairwise comparisons
+# significant_comparisons <- subset(pairwise_comparisons, p.value < 0.05)
+```
+
+
+EXPLORATORY ANALYSIS in progress
+```{r eval=FALSE, fig.height=20, fig.width=10, include=FALSE}
+# 
+# # Running Stats and Selecting Significant Cell Type Differences for Gated Cells TukeyHSD
+# cell_stats <- tidy_Df1 %>%
+#    group_by(cell_types) %>%
+#   nest() %>%
+#   mutate(aov_result = map(data, ~aov(percentage_of_LIVE ~ group, data = .x)),
+#          tukey_result = map(aov_result, TukeyHSD),
+#          tidy_tukey = map(tukey_result, broom::tidy)) %>%
+#   unnest(tidy_tukey, .drop = TRUE) %>%
+#   separate(contrast, into = c("contrast1", "contrast2"), sep = "-") %>%
+#   dplyr::select(-data, -aov_result, -tukey_result, -term, -null.value) %>%
+#   filter(adj.p.value <= 0.05)
+# 
+# 
+# # Join Dataframes Based on Significance and Cell Types
+# common_cell_types <- intersect(tidy_Df1$cell_types, cell_stats$cell_types)
+# tidy_Df1_filtered <- tidy_Df1 %>%
+#   filter(cell_types %in% common_cell_types)
+# 
+# joined_df <- left_join(tidy_Df1_filtered, cell_stats, by = "cell_types")
+# 
+# unique(joined_df$group)
+# # Plot: Group Comparison of Activated T-cells (Combined Days)
+# t_cell_activationPLOT %>%
+#   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93+GLA-SE", "BCG-ID93+GLA-SE")) %>%
+#   ggplot(aes(x = group, y = proportion_of_activated_tcells, fill = group, color = group)) +
+#   geom_boxplot(width = 0.5, alpha = 0.5, position = position_dodge(width = 0.75)) +
+#   geom_point(size = 3, shape = 21, alpha = 0.8, na.rm = TRUE, color = "black",
+#              position = position_dodge(width = 0.75)) +
+#     labs(title = "Regulatory Tcells", x = "Group", y = "% activated T-cells (normalized to CD44+)", color = "Vaccine") +
+#   guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
+#   theme_bw() + 
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+# 
+# # Plot: Group Comparison of Activated T-cells (Facet-wrapped by Day)
+# t_cell_activationPLOT  %>%
+#   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93+GLA-SE", "BCG-ID93+GLA-SE")) %>%
+#   ggplot(aes(x = group, y = proportion_of_activated_tcells, fill = group, color = group)) +
+#   geom_boxplot(width = 0.5, alpha = 0.5, position = position_dodge(width = 0.75)) +
+#   geom_point(size = 3, shape = 21, alpha = 0.8, na.rm = TRUE, color = "black",
+#              position = position_dodge(width = 0.75)) +
+#     labs(title = "Regulatory Tcells by Day", x = "Group", y = "% activated T-cells (normalized to CD44+)", color = "Vaccine") +
+#   guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
+#   theme_bw() + 
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   facet_wrap(~ day, scales = "free_y", ncol = 4, strip.position = "top")
+# 
+# t_cell_activationPLOT  %>%
+#   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93+GLA-SE", "BCG-ID93+GLA-SE")) %>%
+#   ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
+#   geom_boxplot(width = 0.5, alpha = 0.5, position = position_dodge(width = 0.75)) +
+#   geom_point(size = 3, shape = 21, alpha = 0.8, na.rm = TRUE, color = "black",
+#              position = position_dodge(width = 0.75)) +
+#     labs(title = "Regulatory Tcells by Day", x = "Group", y = "% activated T-cells (normalized to CD44+)", color = "Vaccine") +
+#   guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
+#   theme_bw() + 
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) 
+# 
+# 
+# # Plot: Activated T-cells by Sex (Group Comparison with t-tests)
+# t_cell_activationPLOT  %>%
+#   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93+GLA-SE", "BCG-ID93+GLA-SE")) %>%
+#   ggplot(aes(x = sex, y = proportion_of_activated_tcells, fill = sex, color = sex)) +
+#   geom_boxplot(width = 0.5, alpha = 0.5, position = position_dodge(width = 0.75)) +
+#   geom_point(size = 3, shape = 21, alpha = 0.8, na.rm = TRUE, color = "black",
+#              position = position_dodge(width = 0.75)) +
+#   theme_bw() +
+#    labs(title = "Regulatory Tcells by Sex", x = "Sex", y = "Regulatory Tcells by Sex and Day") + 
+#   stat_compare_means(method = "t.test")
+# 
+# 
+# # Plot: Activated T-cells by Sex and day (Facet-wrapped by Group with t-test)
+# t_cell_activationPLOT  %>%
+#   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93+GLA-SE", "BCG-ID93+GLA-SE")) %>%
+#   ggplot(aes(x = sex, y = proportion_of_activated_tcells, fill = sex, color = sex)) +
+#   geom_boxplot(width = 0.5, alpha = 0.5, position = position_dodge(width = 0.75)) +
+#   geom_point(size = 3, shape = 21, alpha = 0.8, na.rm = TRUE, color = "black",
+#              position = position_dodge(width = 0.75)) +
+#   theme_bw() +
+#   facet_wrap(~ day, ncol = 1) +
+#   labs(title = "Regulatory Tcells by Sex and Day", x = "Sex", y = "% Activated T-cells (normalized to CD44+)")  + 
+#   stat_compare_means(method = "t.test", label.y = 5)
+```
+
+
+Saving plots to PDF
+```{r eval=FALSE, include=FALSE}
+# #save to pdf
+# pdf(file = "/Volumes/cvmbs/RSTOR-HenaO_lab/Pablo/SOLOVAX TB/SolovaxTB immunogenicity day 14/Unmixed/FlowJo/CD45_Final_Lung_Plots.pdf",   # The directory you want to save the file in
+#    width = 25, # The width of the plot in inches
+#    height = 35) # The height of the plot in inches
+# plot(CD45_Final_Lung_Plots)
+# dev.off()
+```
+
