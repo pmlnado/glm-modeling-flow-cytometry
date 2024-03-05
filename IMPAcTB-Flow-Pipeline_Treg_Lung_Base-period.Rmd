@@ -317,7 +317,7 @@ Treg_activationPLOT <- t_cell_activationPLOT  %>%
   scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
   # scale_fill_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
   # scale_color_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
-  facet_wrap(~ sex, ncol = 2) +
+  facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
   labs(title = " ", x = "Days Post Infection", y = "Percentage of Live", color = "Vaccine") +
   #guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
   theme_bw() + 
@@ -384,6 +384,36 @@ coefficients <- coefficients %>%
 
 # Print the dataframe
 print(coefficients)
+```
+
+```{r}
+#plot coefficients
+coefficients <- summary(l_mod1)$coefficients[, c("Estimate", "Std. Error")]
+
+# Create a data frame
+coefficients_df <- data.frame(
+  Variable = rownames(coefficients),
+  Estimate = coefficients[, "Estimate"],
+  SE = coefficients[, "Std. Error"]
+)
+
+# plot it
+CoefficientsandConfidence_Intervals_Treg <- ggplot(coefficients_df, aes(x = reorder(Variable, Estimate), y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
+  geom_pointrange() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  coord_flip() +
+  labs(title = "Coefficients and Confidence Intervals",
+       x = "Variable",
+       y = "Estimated Coefficient") +
+  theme_bw()
+
+CoefficientsandConfidence_Intervals_Treg
+
+# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/CoefficientsandConfidence_Intervals_Treg.pdf",   # The directory you want to save the file in
+#     width = 8, # The width of the plot in inches
+#     height = 5) # The height of the plot in inches
+# print(CoefficientsandConfidence_Intervals_Treg)
+# dev.off()
 ```
 
 ## Model diagnostics 
@@ -461,7 +491,7 @@ results <- combinations %>%
 Treg_probability_heatmap <- ggplot(results, aes(x = day, y = group)) +
   geom_tile(aes(fill = probability)) +
   facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
-  scale_fill_viridis_c(name = "Probability of Activated T-cells", labels = function(x) paste0(x, "%")) +# Add 5 to each label
+  scale_fill_viridis_c(name = "Probability", labels = function(x) paste0(x, "%")) +# Add 5 to each label
   theme_minimal() +
   labs(x = "Day", y = "Group", fill = "Probability of Activated T-cells") +
   theme(
@@ -483,40 +513,6 @@ Treg_probability_heatmap
 # dev.off()
 
 
-```
-
-
-
-
-
-```{r}
-#plot coefficients
-coefficients <- summary(l_mod1)$coefficients[, c("Estimate", "Std. Error")]
-
-# Create a data frame
-coefficients_df <- data.frame(
-  Variable = rownames(coefficients),
-  Estimate = coefficients[, "Estimate"],
-  SE = coefficients[, "Std. Error"]
-)
-
-# plot it
-CoefficientsandConfidence_Intervals_Treg <- ggplot(coefficients_df, aes(x = reorder(Variable, Estimate), y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
-  geom_pointrange() +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  coord_flip() +
-  labs(title = "Coefficients and Confidence Intervals",
-       x = "Variable",
-       y = "Estimated Coefficient") +
-  theme_bw()
-
-CoefficientsandConfidence_Intervals_Treg
-
-# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/CoefficientsandConfidence_Intervals_Treg.pdf",   # The directory you want to save the file in
-#     width = 8, # The width of the plot in inches
-#     height = 5) # The height of the plot in inches
-# print(CoefficientsandConfidence_Intervals_Treg)
-# dev.off()
 ```
 
 
@@ -552,9 +548,20 @@ Treg_predictions <- ggplot(predictions, aes(x = x, y = predicted, group = group,
   scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
   scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
   labs(x = "Day", y = "Probability of Activated T Cells", fill = "Vaccine", color = "Vaccine") +
-  facet_wrap(~ facet) +
+  facet_grid(. ~ facet, scales = "free_y", labeller = labeller(facet = capitalize_labels)) +
   theme_bw() +
-  scale_y_continuous(labels = scales::percent, breaks = seq(0, .25, by = 0.05), limits = c(0, .25))
+  scale_y_continuous(labels = scales::percent, breaks = seq(0, .25, by = 0.05), limits = c(0, .25)) +
+  theme(
+    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.text = element_text(color = "black", size = 11),
+    legend.title = element_text(color = "black", size = 11),
+    legend.position = "bottom",  # Placing the legend at the bottom
+    legend.box = "horizontal"   # Making the legend box horizontal
+  )
 
 Treg_predictions
 
