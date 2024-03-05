@@ -204,38 +204,8 @@ t_cell_activation$group <- relevel(t_cell_activation$group, ref = "Saline")
 
 
 Distribution of cell phenotype per mouse and checking for normality
+
 ```{r}
-# # Convert successes to numeric (if it's not already numeric)
-t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
-
-
-# Reorder groups for visuals
-t_cell_activationHIST <- t_cell_activationHIST %>%
-  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
-t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
-
-
-ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
-  geom_histogram(binwidth = 500, color = "black") +
-  scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
-  labs(y = "Frequency", x = "Activated T Cells") +  
-  theme_minimal() +
-    theme(
-    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
-    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
-    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.text = element_text(color = "black", size = 11),
-    legend.title = element_text(color = "black", size = 11)) 
-
-ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
-  geom_histogram(binwidth = 750, color = "black") +
-  scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
-  labs(y = "Frequency", x = "Activated T Cells") +  
-  facet_wrap(~ group) +# Add Y-axis title
-  theme_minimal()
-
 subset(t_cell_activationHIST, sex == "male" & group == "Saline")
 subset(t_cell_activationHIST, group == "BCG")
 
@@ -251,8 +221,55 @@ shapiro_results_by_sex <- tapply(t_cell_activationHIST$successes,
 shapiro_results
 shapiro_results_by_sex
 
-subset(t_cell_activationHIST, sex == "male")
-subset(t_cell_activationHIST, sex == "female")
+# subset(t_cell_activationHIST, sex == "male")
+# subset(t_cell_activationHIST, sex == "female")
+```
+
+
+```{r}
+# # Convert successes to numeric (if it's not already numeric)
+t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
+
+
+# Reorder groups for visuals
+t_cell_activationHIST <- t_cell_activationHIST %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
+t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
+
+
+# ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
+#   geom_histogram(binwidth = 500, color = "black") +
+#   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
+#   labs(y = "Frequency", x = "Activated T Cells") +  
+#   theme_minimal() +
+#     theme(
+#     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+#     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+#     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+#     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+#     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+#     legend.text = element_text(color = "black", size = 11),
+#     legend.title = element_text(color = "black", size = 11)) 
+
+ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
+  geom_histogram(binwidth = 500, color = "black", fill = "grey") +
+  labs(y = "Frequency", x = "Activated T Cells") +  
+  theme_minimal() +
+  theme(
+    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.position = "none")
+
+
+ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
+  geom_histogram(binwidth = 750, color = "black") +
+  scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
+  labs(y = "Frequency", x = "Activated T Cells") +  
+  facet_wrap(~ group) +# Add Y-axis title
+  theme_minimal()
 ```
 
 
