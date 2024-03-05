@@ -49,6 +49,7 @@ library(GGally)
 library(gridExtra)
 library(emmeans)
 library(viridis)
+library(vcd)
 #mm7qNhXs8FN4CFS
 
 citation("ggeffects")
@@ -206,25 +207,35 @@ t_cell_activation$group <- relevel(t_cell_activation$group, ref = "Saline")
 Distribution of cell phenotype per mouse and checking for normality
 
 ```{r}
+# # Convert successes to numeric (if it's not already numeric)
+#t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
+
+# Reorder groups for visuals
+t_cell_activationHIST <- t_cell_activationHIST %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
+t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
+
 summary(t_cell_activationHIST)
-t_cell_activationHIST %>%
-  summarize(
-    mean_successes = mean(successes),
-    median_successes = median(successes),
-    min_successes = min(successes),
-    max_successes = max(successes)
-  )
 
+capitalize_labels <- function(variable) {
+  return(paste0(toupper(substring(variable, 1, 1)), substring(variable, 2)))
+}
 
-install.packages("vcd")
-library(vcd)
+  
+ggplot(data = t_cell_activationHIST) +
+  geom_mosaic(aes(x = product(day), fill = group), divider = ddecker()) +
+  facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
+  scale_fill_viridis_d(name = "Vaccine") +
+  labs(x = "", y = "") +
+  theme_bw() +
+    theme(
+    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.position = "none")
 
-
-mosaicplot(~ sex + group + day, data = t_cell_activationHIST, color = TRUE,
-       labeling_args = list(gp_labels = gpar(fontsize = 8)),
-       xlab = "Sex",
-       ylab = "Group",
-       main = "Mosaic Plot of Sex, Group, and Day")
 
 
 
@@ -249,16 +260,6 @@ shapiro_results_by_sex
 
 
 ```{r}
-# # Convert successes to numeric (if it's not already numeric)
-t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
-
-
-# Reorder groups for visuals
-t_cell_activationHIST <- t_cell_activationHIST %>%
-  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
-t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
-
-
 # ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
 #   geom_histogram(binwidth = 500, color = "black") +
 #   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
@@ -294,6 +295,39 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
   theme_minimal()
 ```
 
+
+# Plot actual CD4+ CD44+ populations for comparison to predicited outcomes
+```{r}
+Treg_activationPLOT <- t_cell_activationPLOT  %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
+  ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
+  geom_boxplot(width = 0.5, alpha = 0.7, position = position_dodge(width = 0.75)) +
+  geom_point(size = 3, shape = 21, alpha = 0.9, na.rm = TRUE, color = "black",
+             position = position_dodge(width = 0.75)) +
+    scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
+  scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
+  # scale_fill_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
+  # scale_color_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
+  facet_wrap(~ sex, ncol = 2) +
+  labs(title = "Activated T Cells in Mtb Infected Lung", x = "Days Post Infection", y = "Percentage of Live", color = "Vaccine") +
+  #guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
+  theme_bw() + 
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.2 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.2 * rel(1)),
+    legend.text = element_text(color = "black", size = .9 * rel(1)),
+    legend.title = element_text(color = "black", size = 1 * rel(1))) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1))
+
+Treg_activationPLOT
+
+# #save to pdf
+# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Treg_activationPLOT.pdf",   # The directory you want to save the file in
+#    width = 10, # The width of the plot in inches
+#    height = 5) # The height of the plot in inches
+# print(Treg_activationPLOT)
+# dev.off()
+```
 
 
 
@@ -404,10 +438,6 @@ qqline(residuals)
 # 
 # t_cell_activation
 # Calculate the probabilities for all combinations using testMod
-
-capitalize_labels <- function(variable) {
-  return(paste0(toupper(substring(variable, 1, 1)), substring(variable, 2)))
-}
 
 combinations <- expand.grid(sex = levels(t_cell_activation$sex),
                             day = levels(t_cell_activation$day),
@@ -612,40 +642,6 @@ Treg_significant_odds_ratios
 # dev.off()
 ```
 
-
-# Plot actual CD4+ CD44+ populations for comparison to predicited outcomes
-```{r}
-Treg_activationPLOT <- t_cell_activationPLOT  %>%
-  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
-  ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
-  geom_boxplot(width = 0.5, alpha = 0.7, position = position_dodge(width = 0.75)) +
-  geom_point(size = 3, shape = 21, alpha = 0.9, na.rm = TRUE, color = "black",
-             position = position_dodge(width = 0.75)) +
-    scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
-  scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
-  # scale_fill_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
-  # scale_color_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
-  facet_wrap(~ sex, ncol = 2) +
-  labs(title = "Activated T Cells in Mtb Infected Lung", x = "Days Post Infection", y = "Percentage of Live", color = "Vaccine") +
-  #guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
-  theme_bw() + 
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.2 * rel(1)),
-    axis.text.y = element_text(color = "black", size = 1.2 * rel(1)),
-    legend.text = element_text(color = "black", size = .9 * rel(1)),
-    legend.title = element_text(color = "black", size = 1 * rel(1))) +
-  scale_y_continuous(labels = scales::percent_format(scale = 1))
-
-Treg_activationPLOT
-
-# #save to pdf
-# pdf(file = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Treg_activationPLOT.pdf",   # The directory you want to save the file in
-#    width = 10, # The width of the plot in inches
-#    height = 5) # The height of the plot in inches
-# print(Treg_activationPLOT)
-# dev.off()
-
-```
 
 ```{r}
 # em_means <- emmeans(l_mod2, specs = ~ group * day + sex)
