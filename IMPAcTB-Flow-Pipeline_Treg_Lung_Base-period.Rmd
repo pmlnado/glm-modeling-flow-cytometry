@@ -206,6 +206,28 @@ t_cell_activation$group <- relevel(t_cell_activation$group, ref = "Saline")
 Distribution of cell phenotype per mouse and checking for normality
 
 ```{r}
+summary(t_cell_activationHIST)
+t_cell_activationHIST %>%
+  summarize(
+    mean_successes = mean(successes),
+    median_successes = median(successes),
+    min_successes = min(successes),
+    max_successes = max(successes)
+  )
+
+
+install.packages("vcd")
+library(vcd)
+
+
+mosaicplot(~ sex + group + day, data = t_cell_activationHIST, color = TRUE,
+       labeling_args = list(gp_labels = gpar(fontsize = 8)),
+       xlab = "Sex",
+       ylab = "Group",
+       main = "Mosaic Plot of Sex, Group, and Day")
+
+
+
 subset(t_cell_activationHIST, sex == "male" & group == "Saline")
 subset(t_cell_activationHIST, group == "BCG")
 
