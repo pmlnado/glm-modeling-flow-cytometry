@@ -50,6 +50,7 @@ library(gridExtra)
 library(emmeans)
 library(viridis)
 library(vcd)
+library(ggmosaic)
 #mm7qNhXs8FN4CFS
 
 citation("ggeffects")
@@ -152,11 +153,11 @@ tidy_Df1
 
 ###
 t_cell_activation <- tidy_Df1 %>%
-  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4+ CD8- CD62L- CD44+") 
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3- CD19+") 
 
 t_cell_activation <- t_cell_activation %>%
   pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
-  rename(trials = "live leukocytes", successes = "CD3+ CD4+ CD8- CD62L- CD44+") %>%
+  rename(trials = "live leukocytes", successes = "CD3- CD19+") %>%
   mutate(failures = trials - successes) %>%
   dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
 
@@ -278,7 +279,7 @@ subset(t_cell_activationHIST, sex == "female")
 
 ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
   geom_histogram(binwidth = 500, color = "black", fill = "grey") +
-  labs(y = "Frequency", x = "Activated T Cells") +  
+  labs(y = "Frequency", x = "CD8 T Cells") +  
   theme_minimal() +
   theme(
     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
@@ -290,9 +291,9 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
 
 
 ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
-  geom_histogram(binwidth = 750, color = "black") +
+  geom_histogram(binwidth = 1500, color = "black") +
   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
-  labs(y = "Frequency", x = "Activated T Cells") +  
+  labs(y = "Frequency", x = "B-Cells") +  
   facet_wrap(~ group) +# Add Y-axis title
   theme_minimal() +
   theme(
@@ -327,7 +328,7 @@ Treg_activationPLOT <- t_cell_activationPLOT  %>%
     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.position = "none")
+    legend.position = "bottom")
 
 Treg_activationPLOT
 
@@ -362,6 +363,21 @@ summary(l_mod1)
 #               family = binomial(link = "logit"), data = t_cell_activation)
 # summary(l_mod11)
 ```
+## Model diagnostics 
+
+# Drop-in-deviance test to compare models
+# The Likelihood Ratio Test compares the fit of two nested models by examining the difference in their log-likelihoods or deviances. It is commonly used to assess the significance of adding or removing predictor variables from a model
+```{r echo=TRUE}
+# Perform Likelihood Ratio Test
+drop_in_dev1 <- anova(l_mod2, l_mod1, test = "Chisq")
+
+drop_in_dev1
+
+
+l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
+              family = quasibinomial(link = "logit"), data = t_cell_activation)
+```
+
 ```{r}
 # Extract coefficients, standard errors, p-values, and significance levels
 coefficients <- coef(summary(l_mod1))
@@ -416,17 +432,7 @@ CoefficientsandConfidence_Intervals_Treg
 # dev.off()
 ```
 
-## Model diagnostics 
 
-# Drop-in-deviance test to compare models
-# The Likelihood Ratio Test compares the fit of two nested models by examining the difference in their log-likelihoods or deviances. It is commonly used to assess the significance of adding or removing predictor variables from a model
-```{r echo=TRUE}
-# Perform Likelihood Ratio Test
-drop_in_dev1 <- anova(l_mod2, l_mod1, test = "Chisq")
-
-drop_in_dev1
-
-```
 
 # This summary outlines the calculation and interpretation of the ratio of deviance explained by a GLM model (l_mod1) to the null deviance:
 calculate the ratio of deviance explained by the model to the null deviance.
@@ -547,10 +553,10 @@ Treg_predictions <- ggplot(predictions, aes(x = x, y = predicted, group = group,
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, position = position_dodge(width = 0.3)) +
   scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
   scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
-  labs(x = "Day", y = "Probability of Activated T Cells", fill = "Vaccine", color = "Vaccine") +
+  labs(x = "Day", y = "Probability of CD19+ B-Cells", fill = "Vaccine", color = "Vaccine") +
   facet_grid(. ~ facet, scales = "free_y", labeller = labeller(facet = capitalize_labels)) +
   theme_bw() +
-  scale_y_continuous(labels = scales::percent, breaks = seq(0, .25, by = 0.05), limits = c(0, .25)) +
+  scale_y_continuous(labels = scales::percent, breaks = seq(0, .45, by = 0.05), limits = c(0, .45)) +
   theme(
     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
@@ -636,7 +642,7 @@ Treg_significant_odds_ratios <- ggplot(odds_data, aes(x = odds_ratio, y = variab
   geom_point(color = "black", size = 3) +
   geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0, color = "black") +
   labs(title = " ",
-       x = "Odds of Activated T Cells",
+       x = "Odds of CD19+ B-Cells",
        y = "Variable") +
   scale_x_continuous(breaks = c(0, 1, 2, 5, 10, 15)) +
   geom_text(aes(label = round(odds_ratio, 2)), vjust = -0.5, color = "black") +
