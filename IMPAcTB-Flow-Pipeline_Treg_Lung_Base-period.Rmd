@@ -50,6 +50,7 @@ library(gridExtra)
 library(emmeans)
 library(viridis)
 library(vcd)
+library(ggmosaic)
 #mm7qNhXs8FN4CFS
 
 citation("ggeffects")
