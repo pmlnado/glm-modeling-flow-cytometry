@@ -203,7 +203,7 @@ t_cell_activation <- t_cell_activation %>%
 t_cell_activation$group <- relevel(t_cell_activation$group, ref = "Saline")
 ```
 
-# Obtain experiment mouse attributes
+# Obtain mouse experiment attributes
 ```{r}
 capitalize_labels <- function(variable) {
   return(paste0(toupper(substring(variable, 1, 1)), substring(variable, 2)))
@@ -276,12 +276,23 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
     legend.position = "none")
 
-# Histograms by Group
+# Histograms by Group with Shapiro-Wilk p-values annotations
+# Create a dataframe with group names and p-values
+p_values <- sapply(shapiro_by_group, function(x) x$p.value)
+p_values_df <- data.frame(group = names(p_values), p_value = p_values)
+p_values_df$facet_label <- paste("Group:", p_values_df$group, "\n", "p-value:", round(p_values_df$p_value, 3))
+
+# Custom labeller function
+my_labeller <- function(variable, value) {
+  return(p_values_df[p_values_df$group == value, "facet_label"])
+}
+
+# Plotting
 ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
   geom_histogram(binwidth = 750, color = "black") +
   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
   labs(y = "Frequency", x = "CD4+ CD44+ Distribution Across Groups") +  
-  facet_wrap(~ group) +# Add Y-axis title
+  facet_wrap(~ group, labeller = my_labeller) +  # Use custom labeller
   theme_minimal() +
   theme(
     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
