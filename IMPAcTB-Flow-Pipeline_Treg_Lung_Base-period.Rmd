@@ -153,11 +153,11 @@ tidy_Df1
 
 ###
 t_cell_activation <- tidy_Df1 %>%
-  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4+ CD8- CD62L- CD44+") 
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "NK1.1+ CD3-") 
 
 t_cell_activation <- t_cell_activation %>%
   pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
-  rename(trials = "live leukocytes", successes = "CD3+ CD4+ CD8- CD62L- CD44+") %>%
+  rename(trials = "live leukocytes", successes = "NK1.1+ CD3-") %>%
   mutate(failures = trials - successes) %>%
   dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
 
@@ -264,43 +264,17 @@ summary(t_cell_activationHIST)
 #     legend.text = element_text(color = "black", size = 11),
 #     legend.title = element_text(color = "black", size = 11)) 
 
-ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
-  geom_histogram(binwidth = 500, color = "black", fill = "grey") +
-  labs(y = "Frequency", x = "CD4+ CD44+ T Cells") +  
-  theme_minimal() +
-  theme(
-    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
-    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
-    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.position = "none")
-
-# Histograms by Group with Shapiro-Wilk p-values annotations
-# Create a dataframe with group names and p-values
-p_values <- sapply(shapiro_by_group, function(x) x$p.value)
-p_values_df <- data.frame(group = names(p_values), p_value = p_values)
-p_values_df$facet_label <- paste("Group:", p_values_df$group, "\n", "p-value:", round(p_values_df$p_value, 3))
-
-# Custom labeller function
-my_labeller <- function(variable, value) {
-  return(p_values_df[p_values_df$group == value, "facet_label"])
-}
-
-# Plotting
-ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
-  geom_histogram(binwidth = 750, color = "black") +
-  scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
-  labs(y = "Frequency", x = "CD4+ CD44+ Distribution Across Groups") +  
-  facet_wrap(~ group, labeller = my_labeller) +  # Use custom labeller
-  theme_minimal() +
-  theme(
-    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
-    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
-    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.position = "none")
+# ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
+#   geom_histogram(binwidth = 500, color = "black", fill = "grey") +
+#   labs(y = "Frequency", x = "CD4+ CD44+ T Cells") +  
+#   theme_minimal() +
+#   theme(
+#     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+#     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+#     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+#     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+#     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+#     legend.position = "none")
 
 # Checking normality
 shapiro_all_data <- shapiro.test(t_cell_activationHIST$successes)
@@ -319,10 +293,37 @@ shapiro_by_group_and_day <- tapply(t_cell_activationHIST$successes,
                                       t_cell_activationHIST$day), 
                           shapiro.test)
 
-shapiro_all_data
-shapiro_by_group
-shapiro_by_group_and_sex
-shapiro_by_group_and_day
+# Histograms by Group with Shapiro-Wilk p-values annotations
+# Create a dataframe with group names and p-values
+p_values <- sapply(shapiro_by_group, function(x) x$p.value)
+p_values_df <- data.frame(group = names(p_values), p_value = p_values)
+p_values_df$facet_label <- paste("", p_values_df$group, "\n", "shapiro.test p-value:", round(p_values_df$p_value, 3))
+
+# Custom labeller function
+my_labeller <- function(variable, value) {
+  return(p_values_df[p_values_df$group == value, "facet_label"])
+}
+
+# Plotting
+ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
+  geom_histogram(binwidth = 300, color = "black") +
+  scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
+  labs(y = "Frequency", x = "NK1.1+ Distribution Across Groups") +  
+  facet_wrap(~ group, labeller = my_labeller) +  # Use custom labeller
+  theme_minimal() +
+  theme(
+    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.position = "none")
+
+
+# shapiro_all_data
+# shapiro_by_group
+# shapiro_by_group_and_sex
+# shapiro_by_group_and_day
 ```
 
 
