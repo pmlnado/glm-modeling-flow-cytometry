@@ -153,11 +153,11 @@ tidy_Df1
 
 ###
 t_cell_activation <- tidy_Df1 %>%
-  dplyr::filter(cell_types == "live leukocytes" | cell_types == "NK1.1+ CD3-") 
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4+ CD8- CD62L- CD44+") 
 
 t_cell_activation <- t_cell_activation %>%
   pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
-  rename(trials = "live leukocytes", successes = "NK1.1+ CD3-") %>%
+  rename(trials = "live leukocytes", successes = "CD3+ CD4+ CD8- CD62L- CD44+") %>%
   mutate(failures = trials - successes) %>%
   dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
 
@@ -205,6 +205,15 @@ t_cell_activation$group <- relevel(t_cell_activation$group, ref = "Saline")
 
 # Obtain mouse experiment attributes
 ```{r}
+# Convert successes to numeric (if it's not already numeric)
+# t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
+
+# Reorder groups for visuals
+t_cell_activationHIST <- t_cell_activationHIST %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
+t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
+
+summary(t_cell_activationHIST)
 capitalize_labels <- function(variable) {
   return(paste0(toupper(substring(variable, 1, 1)), substring(variable, 2)))
 }
@@ -238,16 +247,6 @@ ggplot(data = t_cell_activationHIST) +
 
 # Distribution of cell phenotype per mouse and checking for normality
 ```{r}
-# Convert successes to numeric (if it's not already numeric)
-# t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
-
-# Reorder groups for visuals
-t_cell_activationHIST <- t_cell_activationHIST %>%
-  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
-t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
-
-summary(t_cell_activationHIST)
-
 #Total Histograms
 
 # ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
@@ -329,6 +328,14 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
 
 # Plot actual CD4+ CD44+ populations for comparison to predicited outcomes
 ```{r}
+# Step 1: Extract the relevant data
+data_for_levene <- t_cell_activationPLOT[, c("day", "proportion_of_activated_tcells", "group", "sex")]
+
+# Step 2: Perform Levene's test
+leveneTest(proportion_of_activated_tcells ~ group, data = data_for_levene)
+
+
+
 Treg_activationPLOT <- t_cell_activationPLOT  %>%
   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
   ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
