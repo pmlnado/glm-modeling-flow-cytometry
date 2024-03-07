@@ -153,11 +153,11 @@ tidy_Df1
 
 ###
 t_cell_activation <- tidy_Df1 %>%
-  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4+ CD8- CD62L- CD44+") 
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3- CD19+") 
 
 t_cell_activation <- t_cell_activation %>%
   pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
-  rename(trials = "live leukocytes", successes = "CD3+ CD4+ CD8- CD62L- CD44+") %>%
+  rename(trials = "live leukocytes", successes = "CD3- CD19+") %>%
   mutate(failures = trials - successes) %>%
   dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
 
@@ -279,7 +279,7 @@ subset(t_cell_activationHIST, sex == "female")
 
 ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
   geom_histogram(binwidth = 500, color = "black", fill = "grey") +
-  labs(y = "Frequency", x = "Activated T Cells") +  
+  labs(y = "Frequency", x = "CD8+ T Cells") +  
   theme_minimal() +
   theme(
     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
@@ -293,7 +293,7 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
 ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
   geom_histogram(binwidth = 750, color = "black") +
   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
-  labs(y = "Frequency", x = "Activated T Cells") +  
+  labs(y = "Frequency", x = "CD8+ Distribution Across Groups") +  
   facet_wrap(~ group) +# Add Y-axis title
   theme_minimal() +
   theme(
@@ -319,16 +319,19 @@ Treg_activationPLOT <- t_cell_activationPLOT  %>%
   # scale_fill_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
   # scale_color_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
   facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
-  labs(title = " ", x = "Days Post Infection", y = "Percentage of Live", color = "Vaccine") +
+  labs(title = "Observed CD8+", x = "Days Post Infection", y = "Percentage of Live", color = "Vaccine") +
   #guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
   theme_bw() + 
   theme(
-    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    strip.text = element_text(color = "black", size = 1.3 * rel(1)),
     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.position = "none")
+    axis.title.y = element_text(color = "black", size = 1.4 * rel(1)),
+    legend.position = "bottom",
+    legend.title = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.text = element_text(color = "black", size = .9 * rel(1)),
+    plot.title = element_text(color = "black", size = 15))
 
 Treg_activationPLOT
 
@@ -397,16 +400,28 @@ coefficients_df <- data.frame(
   Estimate = coefficients[, "Estimate"],
   SE = coefficients[, "Std. Error"]
 )
+# Assuming your dataframe is called coefficients_df
+coefficients_df$Variable <- gsub("group", "", coefficients_df$Variable)
+coefficients_df$Variable <- gsub("sex", "", coefficients_df$Variable)
+coefficients_df$Variable <- gsub("male", "Male", coefficients_df$Variable)
+coefficients_df$Variable <- gsub("day", "Day", coefficients_df$Variable)
+coefficients_df$Variable <- gsub(":", " & ", coefficients_df$Variable)
 
 # plot it
 CoefficientsandConfidence_Intervals_Treg <- ggplot(coefficients_df, aes(x = reorder(Variable, Estimate), y = Estimate, ymin = Estimate - 1.96 * SE, ymax = Estimate + 1.96 * SE)) +
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   coord_flip() +
-  labs(title = "Coefficients and Confidence Intervals",
+  labs(title = "CD8+ Estimated Effects",
        x = "Variable",
        y = "Estimated Coefficient") +
-  theme_bw()
+  theme_bw() +
+    theme(
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.4 * rel(1)),
+    plot.title = element_text(color = "black", size = 15))
 
 CoefficientsandConfidence_Intervals_Treg
 
@@ -454,7 +469,7 @@ dev_res <- residuals(l_mod1, type = "deviance")
 fitted_values <- fitted(l_mod1)
 
 # Create the residuals vs. fitted plot
-plot(fitted_values, dev_res, main = "Residuals vs. Fitted", 
+plot(fitted_values, dev_res, main = "CD8+ Residuals vs. Fitted", 
      xlab = "Fitted Values", ylab = "Residuals")
 
 # Add a horizontal reference line at y = 0 (optional)
@@ -494,7 +509,7 @@ Treg_probability_heatmap <- ggplot(results, aes(x = day, y = group)) +
   facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
   scale_fill_viridis_c(name = "Probability", labels = function(x) paste0(x, "%")) +# Add 5 to each label
   theme_minimal() +
-  labs(x = "Day", y = "Group", fill = "Probability of Activated T-cells") +
+  labs(title = "Probability of CD8+", x = "Day", y = " ", fill = "Probability of Activated T-cells") +
   theme(
     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
@@ -502,7 +517,8 @@ Treg_probability_heatmap <- ggplot(results, aes(x = day, y = group)) +
     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
     legend.text = element_text(color = "black", size = 11),
-    legend.title = element_text(color = "black", size = 11))  # Adjust the font size as needed
+    legend.title = element_text(color = "black", size = 11),
+        plot.title = element_text(color = "black", size = 15))# Adjust the font size as needed
 
 
 Treg_probability_heatmap
@@ -548,21 +564,20 @@ Treg_predictions <- ggplot(predictions, aes(x = x, y = predicted, group = group,
   geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2, position = position_dodge(width = 0.3)) +
   scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
   scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
-  labs(x = "Day", y = "Probability of Activated T Cells", fill = "Vaccine", color = "Vaccine") +
+  labs(title = "Predicted CD8+", x = "Day", y = "Probability", fill = "Vaccine", color = "Vaccine") +
   facet_grid(. ~ facet, scales = "free_y", labeller = labeller(facet = capitalize_labels)) +
   theme_bw() +
   scale_y_continuous(labels = scales::percent, breaks = seq(0, .25, by = 0.05), limits = c(0, .25)) +
   theme(
-    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+    strip.text = element_text(color = "black", size = 1.3 * rel(1)),
     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.text = element_text(color = "black", size = 11),
-    legend.title = element_text(color = "black", size = 11),
-    legend.position = "bottom",  # Placing the legend at the bottom
-    legend.box = "horizontal"   # Making the legend box horizontal
-  )
+    axis.title.y = element_text(color = "black", size = 1.4 * rel(1)),
+    legend.position = "bottom",
+    legend.title = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.text = element_text(color = "black", size = .9 * rel(1)),
+    plot.title = element_text(color = "black", size = 15))
 
 Treg_predictions
 
@@ -628,6 +643,12 @@ odds_data <- data.frame(
   lower_ci = lower_ci,
   upper_ci = upper_ci)
 
+odds_data$variables <- gsub("group", "", odds_data$variables)
+odds_data$variables <- gsub("sex", "", odds_data$variables)
+odds_data$variables <- gsub("male", "Male", odds_data$variables)
+odds_data$variables <- gsub("day", "Day", odds_data$variables)
+odds_data$variables <- gsub(":", " & ", odds_data$variables)
+
 # Reorder the order of "odds_ratios"
 odds_data$variables <- factor(odds_data$variables, levels = odds_data$variables[order(odds_data$odds_ratio)])
 
@@ -636,16 +657,24 @@ odds_data$variables <- factor(odds_data$variables, levels = odds_data$variables[
 Treg_significant_odds_ratios <- ggplot(odds_data, aes(x = odds_ratio, y = variables)) +
   geom_point(color = "black", size = 3) +
   geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0, color = "black") +
-  labs(title = " ",
-       x = "Odds of Activated T Cells",
+  labs(title = "Odds of CD8+",
+       x = "Odds Ratio",
        y = "Variable") +
   scale_x_continuous(breaks = c(0, 1, 2, 5, 10, 15)) +
   geom_text(aes(label = round(odds_ratio, 2)), vjust = -0.5, color = "black") +
   theme_minimal() +
-  theme(plot.title = element_text(size = 14, face = "bold"),
-        axis.title = element_text(size = 12),
-        axis.text = element_text(size = 10),
-        axis.line = element_line(color = "black"))
+  theme(
+    strip.text = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.4 * rel(1)),
+    legend.position = "bottom",
+    legend.title = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.text = element_text(color = "black", size = .9 * rel(1)),
+    axis.line = element_line(color = "black"),
+    plot.title = element_text(color = "black", size = 15))
+
 
 Treg_significant_odds_ratios
 
