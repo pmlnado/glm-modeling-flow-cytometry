@@ -203,21 +203,8 @@ t_cell_activation <- t_cell_activation %>%
 t_cell_activation$group <- relevel(t_cell_activation$group, ref = "Saline")
 ```
 
-
-
-Distribution of cell phenotype per mouse and checking for normality
-
+# Obtain experiment mouse attributes
 ```{r}
-# # Convert successes to numeric (if it's not already numeric)
-#t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
-
-# Reorder groups for visuals
-t_cell_activationHIST <- t_cell_activationHIST %>%
-  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
-t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
-
-summary(t_cell_activationHIST)
-
 capitalize_labels <- function(variable) {
   return(paste0(toupper(substring(variable, 1, 1)), substring(variable, 2)))
 }
@@ -242,27 +229,27 @@ ggplot(data = t_cell_activationHIST) +
                    repel = TRUE, 
                    as.label = TRUE)
 
-subset(t_cell_activationHIST, sex == "male" & group == "Saline")
-subset(t_cell_activationHIST, group == "BCG")
-
-shapiro.test(t_cell_activationHIST$successes)
-
-# Check normality of groups
-shapiro_results <- tapply(t_cell_activationHIST$successes, t_cell_activationHIST$group, shapiro.test)
-# Check normality of groups + sex
-shapiro_results_by_sex <- tapply(t_cell_activationHIST$successes, 
-                          interaction(t_cell_activationHIST$group, t_cell_activationHIST$sex), 
-                          shapiro.test)
-# Print the results
-shapiro_results
-shapiro_results_by_sex
-
-subset(t_cell_activationHIST, sex == "male")
-subset(t_cell_activationHIST, sex == "female")
+# Make sure counts are correct!
+# subset(t_cell_activationHIST, sex == "male" & group == "Saline")
+# subset(t_cell_activationHIST, group == "BCG")
+# subset(t_cell_activationHIST, sex == "male")
+# subset(t_cell_activationHIST, sex == "female")
 ```
 
-
+# Distribution of cell phenotype per mouse and checking for normality
 ```{r}
+# Convert successes to numeric (if it's not already numeric)
+# t_cell_activationHIST$successes <- as.numeric(t_cell_activationHIST$successes)
+
+# Reorder groups for visuals
+t_cell_activationHIST <- t_cell_activationHIST %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE"))
+t_cell_activationHIST$group <- relevel(t_cell_activationHIST$group, ref = "Saline")
+
+summary(t_cell_activationHIST)
+
+#Total Histograms
+
 # ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
 #   geom_histogram(binwidth = 500, color = "black") +
 #   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
@@ -289,7 +276,7 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
     legend.position = "none")
 
-
+# Histograms by Group
 ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
   geom_histogram(binwidth = 750, color = "black") +
   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
@@ -303,6 +290,28 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
     legend.position = "none")
+
+# Checking normality
+shapiro_all_data <- shapiro.test(t_cell_activationHIST$successes)
+# Check normality of groups
+shapiro_by_group <- tapply(t_cell_activationHIST$successes, 
+                           t_cell_activationHIST$group, 
+                           shapiro.test)
+# Check normality of groups + sex
+shapiro_by_group_and_sex <- tapply(t_cell_activationHIST$successes, 
+                          interaction(t_cell_activationHIST$group, 
+                                      t_cell_activationHIST$sex), 
+                          shapiro.test)
+# Check normality of groups + day
+shapiro_by_group_and_day <- tapply(t_cell_activationHIST$successes, 
+                          interaction(t_cell_activationHIST$group, 
+                                      t_cell_activationHIST$day), 
+                          shapiro.test)
+
+shapiro_all_data
+shapiro_by_group
+shapiro_by_group_and_sex
+shapiro_by_group_and_day
 ```
 
 
