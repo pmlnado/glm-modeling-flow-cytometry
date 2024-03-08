@@ -335,7 +335,6 @@ data_for_levene <- t_cell_activationPLOT[, c("day", "proportion_of_activated_tce
 leveneTest(proportion_of_activated_tcells ~ group, data = data_for_levene)
 
 
-
 Treg_activationPLOT <- t_cell_activationPLOT  %>%
   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
   ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
@@ -390,10 +389,33 @@ l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
               family = quasibinomial(link = "logit"), data = t_cell_activation)
 summary(l_mod1)
 
-# l_mod11 <- glm(cbind(successes, failures) ~ group * day * sex,
-#               family = binomial(link = "logit"), data = t_cell_activation)
-# summary(l_mod11)
 ```
+
+# Drop-in-deviance test to compare models
+# The Likelihood Ratio Test compares the fit of two nested models by examining the difference in their log-likelihoods or deviances. It is commonly used to assess the significance of adding or removing predictor variables from a model
+```{r echo=TRUE}
+# Perform Likelihood Ratio Test
+drop_in_dev1 <- anova(l_mod2, l_mod1, test = "Chisq")
+
+drop_in_dev1
+
+```
+
+# This summary outlines the calculation and interpretation of the ratio of deviance explained by a GLM model (l_mod1) to the null deviance:
+calculate the ratio of deviance explained by the model to the null deviance.
+The ratio is calculated by dividing the deviance explained by the model by the null deviance.
+The null deviance represents the deviance when no predictors are included in the model, essentially fitting a model with only an intercept.
+The deviance of the model is the difference between the null deviance and the deviance after fitting the model.
+This ratio provides insight into the proportion of deviance explained by the predictors included in the model relative to the total deviance in the null model, ranging from 0 to 1.
+A higher ratio indicates that a larger proportion of the deviance is explained by the predictors in the model.
+
+```{r}
+1- (l_mod1$deviance/l_mod1$null.deviance)
+1- (l_mod2$deviance/l_mod2$null.deviance)
+```
+# To determine the better model, we compare the ratios of deviance explained by each model. In this case, l_mod1 has a higher ratio (approximately 56.63%) compared to l_mod2 (approximately 42.51%), indicating that l_mod1 is the better model.
+In summary, l_mod1 is considered the better model based on the ratios of deviance explained relative to the null deviance
+
 ```{r}
 # Extract coefficients, standard errors, p-values, and significance levels
 coefficients <- coef(summary(l_mod1))
@@ -460,33 +482,7 @@ CoefficientsandConfidence_Intervals_Treg
 # dev.off()
 ```
 
-## Model diagnostics 
-
-# Drop-in-deviance test to compare models
-# The Likelihood Ratio Test compares the fit of two nested models by examining the difference in their log-likelihoods or deviances. It is commonly used to assess the significance of adding or removing predictor variables from a model
-```{r echo=TRUE}
-# Perform Likelihood Ratio Test
-drop_in_dev1 <- anova(l_mod2, l_mod1, test = "Chisq")
-
-drop_in_dev1
-
-```
-
-# This summary outlines the calculation and interpretation of the ratio of deviance explained by a GLM model (l_mod1) to the null deviance:
-calculate the ratio of deviance explained by the model to the null deviance.
-The ratio is calculated by dividing the deviance explained by the model by the null deviance.
-The null deviance represents the deviance when no predictors are included in the model, essentially fitting a model with only an intercept.
-The deviance of the model is the difference between the null deviance and the deviance after fitting the model.
-This ratio provides insight into the proportion of deviance explained by the predictors included in the model relative to the total deviance in the null model, ranging from 0 to 1.
-A higher ratio indicates that a larger proportion of the deviance is explained by the predictors in the model.
-
-```{r}
-1- (l_mod1$deviance/l_mod1$null.deviance)
-1- (l_mod2$deviance/l_mod2$null.deviance)
-```
-# To determine the better model, we compare the ratios of deviance explained by each model. In this case, l_mod1 has a higher ratio (approximately 56.63%) compared to l_mod2 (approximately 42.51%), indicating that l_mod1 is the better model.
-In summary, l_mod1 is considered the better model based on the ratios of deviance explained relative to the null deviance
-
+## Model diagnostics
 
 # Residual Plots
 ```{r echo=TRUE}
