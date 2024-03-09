@@ -443,13 +443,13 @@ print(coefficients)
 ```{r}
 #plot coefficients
 coefficients <- summary(l_mod1)$coefficients[, c("Estimate", "Std. Error")]
-
+coefficients 
 # Create a data frame
 coefficients_df <- data.frame(
   Variable = rownames(coefficients),
   Estimate = coefficients[, "Estimate"],
-  SE = coefficients[, "Std. Error"]
-)
+  SE = coefficients[, "Std. Error"])
+coefficients_df 
 # Assuming your dataframe is called coefficients_df
 coefficients_df$Variable <- gsub("group", "", coefficients_df$Variable)
 coefficients_df$Variable <- gsub("sex", "", coefficients_df$Variable)
@@ -553,6 +553,29 @@ Treg_probability_heatmap
 # print(Treg_probability_heatmap)
 # dev.off()
 
+female_results <- results %>%
+  filter(sex == "female") 
+
+mean(female_results$probability, na.rm = TRUE)
+
+male_results <- results %>%
+  filter(sex == "male") 
+
+mean(male_results$probability, na.rm = TRUE)
+
+
+
+
+
+vaccine_results <- results %>%
+  filter(group == "BCG+ID93-GLA-SE")
+
+mean(vaccine_results$probability, na.rm = TRUE)
+
+male_results <- results %>%
+  filter(sex == "male") 
+
+mean(male_results$probability, na.rm = TRUE)
 
 ```
 
