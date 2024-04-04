@@ -1,0 +1,15 @@
+
+Descriptive statistics
+==============================================
+Statistic            N  Mean St. Dev. Min  Max
+----------------------------------------------
+(Intercept)          13 0.04   0.5    -1.3 0.7
+groupBCG             13 0.3    0.1    0.1  0.4
+groupID93-GLA-SE     13 -0.2   2.3    -6.7 2.2
+groupBCG+ID93-GLA-SE 13 0.4    0.4    0.0  0.9
+----------------------------------------------
+
+Descriptive statistics
+=====
+FALSE
+-----
