@@ -154,11 +154,11 @@ tidy_Df1
 
 ###
 t_cell_activation <- tidy_Df1 %>%
-  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4+ CD8- CD62L- CD44+") 
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "NK1.1+ CD3-") 
 
 t_cell_activation <- t_cell_activation %>%
   pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
-  rename(trials = "live leukocytes", successes = "CD3+ CD4+ CD8- CD62L- CD44+") %>%
+  rename(trials = "live leukocytes", successes = "NK1.1+ CD3-") %>%
   mutate(failures = trials - successes) %>%
   dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
 
@@ -417,7 +417,7 @@ coefficients <- as.data.frame(coefficients_table)
 coefficients <- coefficients %>%
   rownames_to_column('Variable')
 
-# Display the summary table using stargazer with left justification and a white background
+# Display the summary table using stargazer
 stargazer(coefficients, type = "text", title = "CD4+ CD44+ GLM Summary Output (sex as interaction)", summary = FALSE, style = "default", rownames = FALSE, align = TRUE)
 
 ```
@@ -735,7 +735,7 @@ odds_data$variables <- factor(odds_data$variables, levels = odds_data$variables[
 Treg_significant_odds_ratios <- ggplot(odds_data, aes(x = odds_ratio, y = variables)) +
   geom_point(color = "black", size = 3) +
   geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0, color = "black") +
-  labs(title = "Odds of CD4+ CD44+",
+  labs(title = "Odds of NK1.1",
        x = "Odds Ratio",
        y = "Variable") +
   scale_x_continuous(breaks = c(0, 1, 2, 5, 10, 15)) +
