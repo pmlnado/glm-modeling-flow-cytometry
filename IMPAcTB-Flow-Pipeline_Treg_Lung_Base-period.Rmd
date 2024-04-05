@@ -154,11 +154,11 @@ tidy_Df1
 
 ###
 t_cell_activation <- tidy_Df1 %>%
-  dplyr::filter(cell_types == "live leukocytes" | cell_types == "NK1.1+ CD3-") 
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3- CD19+") 
 
 t_cell_activation <- t_cell_activation %>%
   pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
-  rename(trials = "live leukocytes", successes = "NK1.1+ CD3-") %>%
+  rename(trials = "live leukocytes", successes = "CD3- CD19+") %>%
   mutate(failures = trials - successes) %>%
   dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
 
@@ -245,25 +245,8 @@ ggplot(data = t_cell_activationHIST) +
 # subset(t_cell_activationHIST, sex == "male")
 # subset(t_cell_activationHIST, sex == "female")
 
-ggplot(data = t_cell_activationHIST) +
-  geom_mosaic(aes(x = product(sex), fill = group), divider = ddecker(), width = 1, height = 1) +
-  facet_grid(. ~ day, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
-  scale_fill_viridis_d(name = "Vaccine") +
-  labs(x = "", y = "") +
-  theme_bw() +
-  theme(
-    strip.text = element_text(color = "black", size = 1.1 * rel(1)),
-    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
-    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.position = "none"
-  ) +
-  geom_mosaic_text(aes(x = product(sex), fill = group, label = after_stat(.wt)), 
-                   color = 'black', 
-                   fill = 'white', 
-                   repel = TRUE, 
-                   as.label = TRUE)
+
+
 ```
 
 # Distribution of cell phenotype per mouse and checking for normality
@@ -538,16 +521,7 @@ qqline(residuals)
 
 ## GLM modeling and plotting expected outcomes of group * day + sex
 ```{r echo=TRUE}
-#Plot and interpret effects
-# plotGroup <- effect_plot(l_mod1, pred = group, interval = TRUE, y.label = "Probability of Activated T-cells")
-# plotSex <- effect_plot(l_mod1, pred = sex, interval = TRUE, y.label = "Probability of Activated T-cells")
-# plotDay <- effect_plot(l_mod1, pred = day, interval = TRUE, y.label = "Probability of Activated T-cells")
-# 
 # grid.arrange(plotGroup, plotSex, plotDay, ncol = 3)
-# 
-# 
-# 
-# t_cell_activation
 # Calculate the probabilities for all combinations using testMod
 
 combinations <- expand.grid(sex = levels(t_cell_activation$sex),
@@ -583,32 +557,28 @@ Treg_probability_heatmap
 #     height = 5) # The height of the plot in inches
 # print(Treg_probability_heatmap)
 # dev.off()
-
-female_results <- results %>%
-  filter(sex == "female") 
-
-mean(female_results$probability, na.rm = TRUE)
-
-male_results <- results %>%
-  filter(sex == "male") 
-
-mean(male_results$probability, na.rm = TRUE)
-
-
-
-
-
-vaccine_results <- results %>%
-  filter(group == "BCG+ID93-GLA-SE")
-
-mean(vaccine_results$probability, na.rm = TRUE)
-
-male_results <- results %>%
-  filter(sex == "male") 
-
-mean(male_results$probability, na.rm = TRUE)
-
 ```
+
+```{r}
+#Plot and interpret effects
+plotGroup <- effect_plot(l_mod1, pred = group, interval = TRUE, y.label = "Probability of Activated T-cells")
+plotSex <- effect_plot(l_mod1, pred = sex, interval = TRUE, y.label = "Probability of Activated T-cells")
+plotDay <- effect_plot(l_mod1, pred = day, interval = TRUE, y.label = "Probability of Activated T-cells")
+# Generate effect plot
+effect <- effect_plot(l_mod1, pred = "sex", interval = TRUE, y.label = "Probability of CD19+ B-cells")
+
+# Extract data from the effect plot
+ggplot_build(effect)$data[[1]]
+effect_data <- ggplot_build(effect)$data[[1]]
+
+# Add text annotations with actual values
+effect_with_text <- effect + 
+  geom_point(data = effect_data, aes(x = x, y = y, label = paste(round(y, 2), "%")), color = "red", size = 3)
+
+# Print the effect plot with actual values
+print(effect_with_text)
+```
+
 
 
 
@@ -624,10 +594,6 @@ mean(male_results$probability, na.rm = TRUE)
 predictor_terms <- c("day", "group", "sex")
 predictions <- ggpredict(l_mod1, terms = predictor_terms)
 #predictions1 <- ggemmeans(l_mod2, terms = predictor_terms)
-
-#predict(l_mod1, type = "response")
-#predictions
-
 
 plot(predictions) +
   scale_color_viridis_d(name = "Vaccine") +  
