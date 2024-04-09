@@ -387,6 +387,12 @@ $$
 #               family = quasibinomial(link = "logit"), data = t_cell_activation)
 # summary_l_mod1 <- summary(l_mod1)
 # summary_l_mod1
+# Releveling the 'sex' variable with 'male' as the reference level
+t_cell_activation$sex <- relevel(t_cell_activation$sex, ref = "male")
+
+# Fitting the GLM with 'male' as the reference level for 'sex'
+l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
+              family = quasibinomial(link = "logit"), data = t_cell_activation)
 
 # sex as interaction
 l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
@@ -467,7 +473,7 @@ coefficients_df
 # Assuming your dataframe is called coefficients_df
 coefficients_df$Variable <- gsub("group", "", coefficients_df$Variable)
 coefficients_df$Variable <- gsub("sex", "", coefficients_df$Variable)
-coefficients_df$Variable <- gsub("male", "Male", coefficients_df$Variable)
+#coefficients_df$Variable <- gsub("male", "Male", coefficients_df$Variable)
 coefficients_df$Variable <- gsub("day", "Day", coefficients_df$Variable)
 coefficients_df$Variable <- gsub(":", " & ", coefficients_df$Variable)
 
@@ -476,7 +482,7 @@ CoefficientsandConfidence_Intervals_Treg <- ggplot(coefficients_df, aes(x = reor
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   coord_flip() +
-  labs(title = "CD4+ CD44+ Estimated Effects",
+  labs(title = "CD19+ Estimated Effects",
        x = "Variable",
        y = "Estimated Coefficient") +
   theme_bw() +
@@ -689,7 +695,7 @@ odds_data <- data.frame(
 
 odds_data$variables <- gsub("group", "", odds_data$variables)
 odds_data$variables <- gsub("sex", "", odds_data$variables)
-odds_data$variables <- gsub("male", "Male", odds_data$variables)
+odds_data$variables <- gsub("male", "male", odds_data$variables)
 odds_data$variables <- gsub("day", "Day", odds_data$variables)
 odds_data$variables <- gsub(":", " & ", odds_data$variables)
 
@@ -701,7 +707,7 @@ odds_data$variables <- factor(odds_data$variables, levels = odds_data$variables[
 Treg_significant_odds_ratios <- ggplot(odds_data, aes(x = odds_ratio, y = variables)) +
   geom_point(color = "black", size = 3) +
   geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0, color = "black") +
-  labs(title = "Odds of NK1.1",
+  labs(title = "Odds of CD19+",
        x = "Odds Ratio",
        y = "Variable") +
   scale_x_continuous(breaks = c(0, 1, 2, 5, 10, 15)) +
