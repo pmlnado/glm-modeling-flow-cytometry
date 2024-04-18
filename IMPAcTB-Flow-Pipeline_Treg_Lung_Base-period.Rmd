@@ -569,6 +569,18 @@ Treg_probability_heatmap
 ```
 
 ```{r}
+# Generate effect plots for different levels of 'day'
+plotSex_day14 <- effect_plot(l_mod1, pred = sex, at = list(day = "14"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 14")
+plotSex_day56 <- effect_plot(l_mod1, pred = sex, at = list(day = "56"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 56")
+plotSex_day90 <- effect_plot(l_mod1, pred = sex, at = list(day = "90"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 90")
+
+# Generate effect plots for different levels of 'day' and 'group'
+effect_plot(l_mod1, pred = sex, at = list(day = "14", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 14")
+effect_plot(l_mod1, pred = sex, at = list(day = "56", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 56")
+effect_plot(l_mod1, pred = sex, at = list(day = "90", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 90")
+
+
+t_cell_activation
 #Plot and interpret effects
 plotGroup <- effect_plot(l_mod1, pred = group, interval = TRUE, y.label = "Probability of Activated T-cells")
 plotSex <- effect_plot(l_mod1, pred = sex, interval = TRUE, y.label = "Probability of Activated T-cells")
@@ -587,6 +599,7 @@ effect_with_text <- effect +
 # Print the effect plot with actual values
 print(effect_with_text)
 ```
+
 
 
 
