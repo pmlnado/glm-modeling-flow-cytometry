@@ -64,7 +64,7 @@ packageVersion("ggplot2")
 MULTI CSV SHEETS MALE FEMALE
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Read in all CSV files
-files <- list.files(path = "/Volumes/rstor-henao_lab/Pablo/IMPAcTB-Flow-pipeline/Base_period_Treg", pattern = "*.csv", full.names = TRUE)
+files <- list.files(path = "R:\\RSTOR-HenaO_lab\\Pablo\\glm-modeling-flow-cytometry\\Base_period_Treg", pattern = "*.csv", full.names = TRUE)
 
 dfs <- lapply(files, function(file) {
   # Read the CSV file and clean up column names
@@ -397,18 +397,31 @@ $$
 # summary_l_mod1 <- summary(l_mod1)
 # summary_l_mod1
 # Releveling the 'sex' variable with 'male' as the reference level
-t_cell_activation$sex <- relevel(t_cell_activation$sex, ref = "male")
+t_cell_activation$sex <- relevel(t_cell_activation$sex, ref = "female")
 
 # Fitting the GLM with 'male' as the reference level for 'sex'
-l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
-              family = quasibinomial(link = "logit"), data = t_cell_activation)
+# l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
+#               family = quasibinomial(link = "logit"), data = t_cell_activation)
 
 # sex as interaction
 l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
               family = quasibinomial(link = "logit"), data = t_cell_activation)
+
 summary_l_mod1 <- summary(l_mod1)
+summary_l_mod1 <- summary_l_mod1
 summary_l_mod1
 
+
+p_values <- summary(l_mod1)$coefficients[, 4]
+adjusted_p_values <- p.adjust(p_values, method = "fdr")
+adjusted_p_values
+
+summary_df <- as.data.frame(summary_l_mod1$coefficients)
+summary_df$Adjusted_P_Value <- adjusted_p_values
+summary_df
+
+```
+```{r}
 # Extract the coefficients table
 coefficients_table <- summary_l_mod1$coefficients
 coefficients <- as.data.frame(coefficients_table)
@@ -417,8 +430,8 @@ coefficients <- coefficients %>%
 
 # Display the summary table using stargazer
 stargazer(coefficients, type = "text", title = "CD4+ CD44+ GLM Summary Output (sex as interaction)", summary = FALSE, style = "default", rownames = FALSE, align = TRUE)
-
 ```
+
 
 # Drop-in-deviance test to compare models
 # The Likelihood Ratio Test compares the fit of two nested models by examining the difference in their log-likelihoods or deviances. It is commonly used to assess the significance of adding or removing predictor variables from a model
