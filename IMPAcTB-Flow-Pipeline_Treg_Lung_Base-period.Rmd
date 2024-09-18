@@ -413,7 +413,7 @@ summary_l_mod1
 
 
 p_values <- summary(l_mod1)$coefficients[, 4]
-adjusted_p_values <- p.adjust(p_values, method = "fdr")
+adjusted_p_values <- p.adjust(p_values, method = "holm")
 adjusted_p_values
 
 summary_df <- as.data.frame(summary_l_mod1$coefficients)
