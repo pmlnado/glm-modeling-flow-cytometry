@@ -400,8 +400,8 @@ $$
 t_cell_activation$sex <- relevel(t_cell_activation$sex, ref = "female")
 
 # Fitting the GLM with 'male' as the reference level for 'sex'
-# l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
-#               family = quasibinomial(link = "logit"), data = t_cell_activation)
+l_mod2 <- glm(cbind(successes, failures) ~ group * day + sex,
+              family = quasibinomial(link = "logit"), data = t_cell_activation)
 
 # sex as interaction
 l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
