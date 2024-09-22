@@ -64,7 +64,7 @@ packageVersion("ggplot2")
 MULTI CSV SHEETS MALE FEMALE
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Read in all CSV files
-files <- list.files(path = "R:\\RSTOR-HenaO_lab\\Pablo\\glm-modeling-flow-cytometry\\Base_period_Treg", pattern = "*.csv", full.names = TRUE)
+files <- list.files(path = "/Volumes/rstor-henao_lab/Pablo/glm-modeling-flow-cytometry/Base_period_Treg", pattern = "*.csv", full.names = TRUE)
 
 dfs <- lapply(files, function(file) {
   # Read the CSV file and clean up column names
@@ -252,12 +252,13 @@ ggplot(data = t_cell_activationHIST) +
 # Distribution of cell phenotype per mouse and checking for normality
 
 ```{r}
-#Total Histograms
+#Total Histograms binwidth for CD44+ is 750
 
  ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
-   geom_histogram(binwidth = 500, color = "black") +
+   geom_histogram(binwidth = 750, color = "black") +
    scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
    labs(y = "Frequency", x = "Activated T Cells") +
+    facet_wrap(~ group, ncol = 2) +
    theme_minimal() +
      theme(
      strip.text = element_text(color = "black", size = 1.1 * rel(1)),
@@ -268,17 +269,17 @@ ggplot(data = t_cell_activationHIST) +
      legend.text = element_text(color = "black", size = 11),
      legend.title = element_text(color = "black", size = 11))
 
- ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
-   geom_histogram(binwidth = 500, color = "black", fill = "grey") +
-   labs(y = "Frequency", x = "CD4+ CD44+ T Cells") +
-   theme_minimal() +
-   theme(
-     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
-     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
-     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
-     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
-     legend.position = "none")
+ # ggplot(t_cell_activationHIST, aes(x = successes, fill = "bar")) +
+ #   geom_histogram(binwidth = 500, color = "black", fill = "grey") +
+ #   labs(y = "Frequency", x = "CD4+ CD44+ T Cells") +
+ #   theme_minimal() +
+ #   theme(
+ #     strip.text = element_text(color = "black", size = 1.1 * rel(1)),
+ #     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+ #     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+ #     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+ #     axis.title.y = element_text(color = "black", size = 1.3 * rel(1)),
+ #     legend.position = "none")
 ```
 
 
@@ -315,11 +316,11 @@ ggplot(data = t_cell_activationHIST) +
 
 # Plotting
 ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
-  geom_histogram(binwidth = 10000, color = "black") +
+  geom_histogram(binwidth = 925, color = "black") +
   scale_fill_viridis_d(name = "Vaccine") +  # Add legend title
-  labs(y = "Frequency", x = "CD19+ Distribution of Success") +  
+  labs(y = "Frequency", x = "CD44+ Distribution of Success") +  
   #facet_wrap(~ group, labeller = my_labeller) +  # Use custom labeller
-  facet_wrap(~ group + day, ncol = 3) +
+  facet_wrap(~ group, ncol = 2) +
   theme_minimal() +
   theme(
     strip.text = element_text(color = "black", size = 5 * rel(1)),
@@ -328,7 +329,7 @@ ggplot(t_cell_activationHIST, aes(x = successes, fill = group)) +
     axis.text.y = element_text(color = "black", size = 5 * rel(1)),
     axis.title.y = element_text(color = "black", size = 5 * rel(1)),
     legend.position = "none") +
-  scale_x_continuous(breaks = seq(0, max(t_cell_activationHIST$successes), by = 10000))
+  scale_x_continuous(breaks = seq(0, max(t_cell_activationHIST$successes), by = 5000))
  
 
 
