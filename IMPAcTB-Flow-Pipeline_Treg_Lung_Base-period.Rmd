@@ -684,7 +684,7 @@ CI <- exp(confint(l_mod1))
 coefficients <- summary(l_mod1)$coef
 
 # Define a significance threshold (e.g., 0.05)
-significance_threshold <- 0.05
+significance_threshold <- 5
 
 # Filter significant coefficients
 significant_coefficients <- coefficients[coefficients[, 4] < significance_threshold, ]
@@ -731,7 +731,7 @@ odds_data <- data.frame(
 
 odds_data$variables <- gsub("group", "", odds_data$variables)
 odds_data$variables <- gsub("sex", "", odds_data$variables)
-odds_data$variables <- gsub("male", "male", odds_data$variables)
+odds_data$variables <- gsub("male", "Male", odds_data$variables)
 odds_data$variables <- gsub("day", "Day", odds_data$variables)
 odds_data$variables <- gsub(":", " & ", odds_data$variables)
 
@@ -743,11 +743,11 @@ odds_data$variables <- factor(odds_data$variables, levels = odds_data$variables[
 Treg_significant_odds_ratios <- ggplot(odds_data, aes(x = odds_ratio, y = variables)) +
   geom_point(color = "black", size = 3) +
   geom_errorbarh(aes(xmin = lower_ci, xmax = upper_ci), height = 0, color = "black") +
-  labs(title = "Odds of CD19+",
+  labs(title = "CD4+ CD44+ Odds Ratios",
        x = "Odds Ratio",
        y = "Variable") +
   scale_x_continuous(breaks = c(0, 1, 2, 5, 10, 15)) +
-  geom_text(aes(label = round(odds_ratio, 2)), vjust = -0.5, color = "black") +
+ # geom_text(aes(label = round(odds_ratio, 2)), vjust = -0.5, color = "black") +
   theme_minimal() +
   theme(
     strip.text = element_text(color = "black", size = 1.3 * rel(1)),
