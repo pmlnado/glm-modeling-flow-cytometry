@@ -487,8 +487,7 @@ summary_df$Adjusted_P_Value <- adjusted_p_values
 summary_df
 ```
 
-
-cooks Distance and removed outliers 
+FLAGGING OUTLIERS Cooks Distance and Omitted Outliers 
 ```{r}
 cooks_d <- cooks.distance(l_mod1)
 cutoff <- 4 / nrow(t_cell_activation)
@@ -523,6 +522,59 @@ common_samples <- inner_join(
 )
 
 ```
+
+Cooks Distance Measurments from Textbook
+```{r}
+cdmax <- which.max( cooks.distance(l_mod1)) # Largest D
+cdmin <- which.min( cooks.distance(l_mod1)) # Smallest D
+c(MinCook = cdmin, MaxCook = cdmax)
+
+out <- cbind( DFFITS=dffits(l_mod1),
+Cooksdistance=cooks.distance(l_mod1),
+Covratio=covratio(l_mod1))
+
+round(out[c(cdmin, cdmax),], 5)
+
+library(statmod) # To find randomized quantile residuals
+qr <- qresid(l_mod1)
+qqnorm(qr, las=1); qqline(qr)
+plot( qr ~ sqrt(fitted(l_mod1)), las=1 )
+plot( cooks.distance(l_mod1), type="h", las=1 )
+plot( hatvalues(l_mod1), type="h", las=1 )
+
+maxhat <- which.max( hatvalues(l_mod1) ) # Largest leverage
+maxqr <- which.max( abs(qr) ) # Largest abs. residual
+maxinfl <- which.max( cooks.distance(l_mod1)) # Most influential
+c( MaxLeverage=maxhat, MaxResid=maxqr, MaxInfluence=maxinfl)
+which(influence.measures(l_mod1)$is.inf[,"cook.d"]) #Determine  influential obs according to R’s criterion
+```
+
+```{r}
+outliers <- c(34, 43)
+t_cell_activation[outliers, ]
+
+l_mod1_no_outliers <- glm(
+  cbind(successes, failures) ~ group * day * sex, 
+  family = quasibinomial(link = "logit"), 
+  data = t_cell_activation[-outliers, ]
+)
+
+summary(l_mod1)
+summary(l_mod1_no_outliers)
+
+t_cell_activation_no_outliers <- t_cell_activation[-outliers, ]
+
+
+t_cell_activation_no_outliers
+t_cell_activationPLOT
+
+common_samples <- inner_join(
+  t_cell_activationPLOT,
+  t_cell_activation_no_outliers,
+  by = c("group", "mouse_ID", "sex", "day"))
+
+```
+
 
 plot with removed outliers
 ```{r}
@@ -568,7 +620,8 @@ summary(l_mod1_no_outliers)$deviance
 
 ```{r}
 # Extract the coefficients table
-coefficients_table <- summary_l_mod1$coefficients
+summary_l_mod1_no_outliers <- summary(l_mod1_no_outliers)
+coefficients_table <- summary_l_mod1_no_outliers$coefficients
 coefficients <- as.data.frame(coefficients_table)
 coefficients <- coefficients %>%
   rownames_to_column('Variable')
