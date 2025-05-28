@@ -162,11 +162,11 @@ tidy_Df1
 
 ###
 t_cell_activation <- tidy_Df1 %>%
-  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4+ CD8- CD62L- CD44+") 
+  dplyr::filter(cell_types == "live leukocytes" | cell_types == "CD3+ CD4- CD8+") 
 
 t_cell_activation <- t_cell_activation %>%
   pivot_wider(names_from = cell_types, values_from = `cell type count`) %>%
-  rename(trials = "live leukocytes", successes = "CD3+ CD4+ CD8- CD62L- CD44+") %>%
+  rename(trials = "live leukocytes", successes = "CD3+ CD4- CD8+") %>%
   mutate(failures = trials - successes) %>%
   dplyr::select(-`cells in sample`, -leukocytes, -`single cells`)
 
@@ -499,27 +499,27 @@ abline(h = cutoff, col = "red", lty = 2)
 text(x = outliers, y = cooks_d[outliers], labels = outliers, pos = 4, col = "blue")
 
 
-outliers <- c(5, 6, 32, 34, 35, 41, 46, 49, 55, 56, 80, 83)
-t_cell_activation[outliers, ]
-
-l_mod1_no_outliers <- glm(
-  cbind(successes, failures) ~ group * day * sex, 
-  family = quasibinomial(link = "logit"), 
-  data = t_cell_activation[-outliers, ]
-)
-
-
-t_cell_activation_no_outliers <- t_cell_activation[-outliers, ]
-
-
-t_cell_activation_no_outliers
-t_cell_activationPLOT
-
-common_samples <- inner_join(
-  t_cell_activationPLOT,
-  t_cell_activation_no_outliers,
-  by = c("group", "mouse_ID", "sex", "day")
-)
+# outliers <- c(5, 6, 32, 34, 35, 41, 46, 49, 55, 56, 80, 83)
+# t_cell_activation[outliers, ]
+# 
+# l_mod1_no_outliers <- glm(
+#   cbind(successes, failures) ~ group * day * sex, 
+#   family = quasibinomial(link = "logit"), 
+#   data = t_cell_activation[-outliers, ]
+# )
+# 
+# 
+# t_cell_activation_no_outliers <- t_cell_activation[-outliers, ]
+# 
+# 
+# t_cell_activation_no_outliers
+# t_cell_activationPLOT
+# 
+# common_samples <- inner_join(
+#   t_cell_activationPLOT,
+#   t_cell_activation_no_outliers,
+#   by = c("group", "mouse_ID", "sex", "day")
+# )
 
 ```
 
