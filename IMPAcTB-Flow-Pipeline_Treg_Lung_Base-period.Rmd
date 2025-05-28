@@ -408,9 +408,9 @@ l_mod2 <- glm(cbind(successes, failures) ~ group * day + sex,
 l_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
               family = quasibinomial(link = "logit"), data = t_cell_activation)
 
-summary_l_mod1 <- summary(l_mod1)
-summary_l_mod1 <- summary_l_mod1
+summary_l_mod2 <- summary(l_mod2)
 summary_l_mod1
+summary_l_mod2
 
 
 p_values <- summary(l_mod1)$coefficients[, 4]
