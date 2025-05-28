@@ -59,12 +59,20 @@ packageVersion("ggeffects")
 
 citation("tidyr")
 packageVersion("ggplot2")
+
+getwd()
 ```
 
 MULTI CSV SHEETS MALE FEMALE
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Read in all CSV files
-files <- list.files(path = "/Volumes/rstor-henao_lab/Pablo/glm-modeling-flow-cytometry/Base_period_Treg", pattern = "*.csv", full.names = TRUE)
+# files <- list.files(path = "/Volumes/rstor-henao_lab/Pablo/glm-modeling-flow-cytometry/Base_period_Treg", pattern = "*.csv", full.names = TRUE)
+
+files <- list.files(
+  path = "Base_period_Treg",
+  pattern = "\\.csv$", 
+  full.names = TRUE
+)
 
 dffs <- lapply(files, function(file) {
   # Read the CSV file and clean up column names
@@ -383,58 +391,60 @@ Treg_activationPLOT
 # print(Treg_activationPLOT)
 # dev.off()
 ```
+
+IQR to cleaned data removed of outliers on proportional data. not reccommended.
 ```{r}
-t_cell_activationPLOT %>%
-  group_by(group, day, sex) %>%
-  mutate(
-    q1 = quantile(proportion_of_activated_tcells, 0.25),
-    q3 = quantile(proportion_of_activated_tcells, 0.75),
-    iqr = IQR(proportion_of_activated_tcells),
-    lower_bound = q1 - 1.5 * iqr,
-    upper_bound = q3 + 1.5 * iqr,
-    is_outlier = proportion_of_activated_tcells < lower_bound | proportion_of_activated_tcells > upper_bound
-  ) %>%
-  filter(is_outlier) %>%
-  ungroup()
-
-cleaned_data <- t_cell_activationPLOT %>%
-  group_by(group, day, sex) %>%
-  mutate(
-    q1 = quantile(proportion_of_activated_tcells, 0.25),
-    q3 = quantile(proportion_of_activated_tcells, 0.75),
-    iqr = IQR(proportion_of_activated_tcells),
-    lower_bound = q1 - 1.5 * iqr,
-    upper_bound = q3 + 1.5 * iqr
-  ) %>%
-  filter(proportion_of_activated_tcells >= lower_bound & proportion_of_activated_tcells <= upper_bound) %>%
-  ungroup()
-
-Treg_activationPLOT <- cleaned_data  %>%
-  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
-  ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
-  geom_boxplot(width = 0.5, alpha = 0.7, position = position_dodge(width = 0.75)) +
-  geom_point(size = 3, shape = 21, alpha = 0.9, na.rm = TRUE, color = "black",
-             position = position_dodge(width = 0.75)) +
-    scale_color_viridis_d(name = "Vaccine", alpha = 1) +  
-  scale_fill_viridis_d(name = "Vaccine", alpha = 1) +  
-  # scale_fill_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
-  # scale_color_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
-  facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
-  labs(title = "Observed CD4+ CD44+", x = "Days Post Infection", y = "Percentage of Live Leukocytes", color = "Vaccine") +
-  #guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
-  theme_bw() + 
-  theme(
-    strip.text = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
-    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
-    axis.title.y = element_text(color = "black", size = 1.4 * rel(1)),
-    legend.position = "bottom",
-    legend.title = element_text(color = "black", size = 1.3 * rel(1)),
-    legend.text = element_text(color = "black", size = .9 * rel(1)),
-    plot.title = element_text(color = "black", size = 15))
-
-Treg_activationPLOT
+# t_cell_activationPLOT %>%
+#   group_by(group, day, sex) %>%
+#   mutate(
+#     q1 = quantile(proportion_of_activated_tcells, 0.25),
+#     q3 = quantile(proportion_of_activated_tcells, 0.75),
+#     iqr = IQR(proportion_of_activated_tcells),
+#     lower_bound = q1 - 1.5 * iqr,
+#     upper_bound = q3 + 1.5 * iqr,
+#     is_outlier = proportion_of_activated_tcells < lower_bound | proportion_of_activated_tcells > upper_bound
+#   ) %>%
+#   filter(is_outlier) %>%
+#   ungroup()
+# 
+# cleaned_data <- t_cell_activationPLOT %>%
+#   group_by(group, day, sex) %>%
+#   mutate(
+#     q1 = quantile(proportion_of_activated_tcells, 0.25),
+#     q3 = quantile(proportion_of_activated_tcells, 0.75),
+#     iqr = IQR(proportion_of_activated_tcells),
+#     lower_bound = q1 - 1.5 * iqr,
+#     upper_bound = q3 + 1.5 * iqr
+#   ) %>%
+#   filter(proportion_of_activated_tcells >= lower_bound & proportion_of_activated_tcells <= upper_bound) %>%
+#   ungroup()
+# 
+# Treg_activationPLOT <- cleaned_data  %>%
+#   mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
+#   ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
+#   geom_boxplot(width = 0.5, alpha = 0.7, position = position_dodge(width = 0.75)) +
+#   geom_point(size = 3, shape = 21, alpha = 0.9, na.rm = TRUE, color = "black",
+#              position = position_dodge(width = 0.75)) +
+#     scale_color_viridis_d(name = "Vaccine", alpha = 1) +
+#   scale_fill_viridis_d(name = "Vaccine", alpha = 1) +
+#   # scale_fill_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
+#   # scale_color_manual(values = c(alpha("red3", 0.7), alpha("darkolivegreen3", 0.7), alpha("seagreen", 0.7), alpha("steelblue1", 0.7))) +
+#   facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
+#   labs(title = "Observed CD4+ CD44+", x = "Days Post Infection", y = "Percentage of Live Leukocytes", color = "Vaccine") +
+#   #guides(fill = "none", shape = guide_legend(title = "Vaccine")) +
+#   theme_bw() +
+#   theme(
+#     strip.text = element_text(color = "black", size = 1.3 * rel(1)),
+#     axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+#     axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+#     axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+#     axis.title.y = element_text(color = "black", size = 1.4 * rel(1)),
+#     legend.position = "bottom",
+#     legend.title = element_text(color = "black", size = 1.3 * rel(1)),
+#     legend.text = element_text(color = "black", size = .9 * rel(1)),
+#     plot.title = element_text(color = "black", size = 15))
+# 
+# Treg_activationPLOT
 
 ```
 
@@ -443,81 +453,6 @@ Treg_activationPLOT
 $$
 log(1−pp)=β0+β1χ1+β2χ2+β3χ3+β4χ4+β5χ5+β6χ6+β7(χ1χ4)+β8(χ2χ4)+β9(χ3χ4)+β10(χ1χ5)+β11(χ2χ5)+β12(χ3χ5)+β13(χ1χ6)+β14(χ2χ6)+β15(χ3χ6)+β16(χ4χ6)+β17(χ5χ6)+β18(χ1χ4χ6)+β19(χ2χ4χ6)+β20(χ3χ4χ6)+β21(χ1χ5χ6)+β22(χ2χ5χ6)+β23(χ3χ5χ6)
 $$
-OUTLIERS AND SENSITIVITY
-```{r}
-#cleaned_data$sex <- relevel(cleaned_data$sex, ref = "female")
-
-# Fitting the GLM with 'male' as the reference level for 'sex'
-cleaned_datal_mod2 <- glm(cbind(successes, failures) ~ group * day + sex,
-              family = quasibinomial(link = "logit"), data = cleaned_data)
-
-# sex as interaction
-cleaned_datal_mod1 <- glm(cbind(successes, failures) ~ group * day * sex,
-              family = quasibinomial(link = "logit"), data = cleaned_data)
-
-summary_l_mod1cleaned_data <- summary(cleaned_datal_mod1)
-summary_l_mod2cleaned_data <- summary(cleaned_datal_mod2)
-summary_l_mod1cleaned_data
-summary_l_mod2cleaned_data
-
-drop_in_dev1cleaned_data <- anova(cleaned_datal_mod2, cleaned_datal_mod1, test = "Chisq")
-
-drop_in_dev1cleaned_data
-drop_in_dev1
-
-1- (cleaned_datal_mod1$deviance/cleaned_datal_mod1$null.deviance)
-1- (cleaned_datal_mod2$deviance/cleaned_datal_mod2$null.deviance)
-
-1- (l_mod1$deviance/l_mod1$null.deviance)
-1- (l_mod2$deviance/l_mod2$null.deviance)
-```
-```{r}
-
-
-#needs work
-res <- residuals(l_mod1, type = "deviance")
-
-q1 <- quantile(res, 0.25)
-q3 <- quantile(res, 0.75)
-iqr <- IQR(res)
-
-lower_bound <- q1 - 1.5 * iqr
-upper_bound <- q3 + 1.5 * iqr
-
-# Step 4: Identify outlier indices
-outlier_indices <- which(res < lower_bound | res > upper_bound)
-
-# Subset your dataset: remove those outliers
-t_cell_data_cleaned <- t_cell_data[-outlier_indices, ]
-
-t_cell_data_cleaned
-
-
-
-
-
-
-
-######
-residuals <- residuals(l_mod1)
-
-dev_res <- residuals(l_mod1, type = "deviance")
-fitted_values <- fitted(l_mod1)
-
-# Create the residuals vs. fitted plot
-plot(fitted_values, dev_res, main = "CD4+ CD44+ Residuals vs. Fitted", 
-     xlab = "Fitted Values", ylab = "Residuals")
-
-# Add a horizontal reference line at y = 0 (optional)
-abline(h = 0, col = "red", lty = 2)
-
-# Create a QQ plot of deviance residuals
-qqnorm(residuals)
-qqline(residuals)
-```
-
-
-
 
 ## GLM modeling for: group * day + sex | group * day * sex | group * day
 ```{r echo=TRUE}
@@ -550,8 +485,85 @@ adjusted_p_values
 summary_df <- as.data.frame(summary_l_mod1$coefficients)
 summary_df$Adjusted_P_Value <- adjusted_p_values
 summary_df
-
 ```
+
+
+cooks Distance and removed outliers 
+```{r}
+cooks_d <- cooks.distance(l_mod1)
+cutoff <- 4 / nrow(t_cell_activation)
+outliers <- which(cooks_d > cutoff)
+outlier_rows <- t_cell_activation[outliers, ]
+
+plot(cooks_d, type = "h", main = "Cook's Distance", ylab = "Distance")
+abline(h = cutoff, col = "red", lty = 2)
+text(x = outliers, y = cooks_d[outliers], labels = outliers, pos = 4, col = "blue")
+
+
+outliers <- c(5, 6, 32, 34, 35, 41, 46, 49, 55, 56, 80, 83)
+t_cell_activation[outliers, ]
+
+l_mod1_no_outliers <- glm(
+  cbind(successes, failures) ~ group * day * sex, 
+  family = quasibinomial(link = "logit"), 
+  data = t_cell_activation[-outliers, ]
+)
+
+
+t_cell_activation_no_outliers <- t_cell_activation[-outliers, ]
+
+
+t_cell_activation_no_outliers
+t_cell_activationPLOT
+
+common_samples <- inner_join(
+  t_cell_activationPLOT,
+  t_cell_activation_no_outliers,
+  by = c("group", "mouse_ID", "sex", "day")
+)
+```
+
+plot with removed outliers
+```{r}
+common_samples %>%
+  mutate(group = fct_relevel(group, "Saline", "BCG", "ID93-GLA-SE", "BCG+ID93-GLA-SE")) %>%
+  ggplot(aes(x = day, y = proportion_of_activated_tcells, fill = group, color = group)) +
+  geom_boxplot(width = 0.5, alpha = 0.7, position = position_dodge(width = 0.75)) +
+  geom_point(size = 3, shape = 21, alpha = 0.9, na.rm = TRUE, color = "black",
+             position = position_dodge(width = 0.75)) +
+    scale_color_viridis_d(name = "Vaccine", alpha = 1) +
+  scale_fill_viridis_d(name = "Vaccine", alpha = 1) +
+  facet_grid(. ~ sex, scales = "free_y", labeller = labeller(sex = capitalize_labels)) +
+  labs(title = "Observed CD4+ CD44+", x = "Days Post Infection", y = "Percentage of Live Leukocytes", color = "Vaccine") +
+  theme_bw() +
+  theme(
+    strip.text = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 1.3 * rel(1)),
+    axis.title.x = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.text.y = element_text(color = "black", size = 1.3 * rel(1)),
+    axis.title.y = element_text(color = "black", size = 1.4 * rel(1)),
+    legend.position = "bottom",
+    legend.title = element_text(color = "black", size = 1.3 * rel(1)),
+    legend.text = element_text(color = "black", size = .9 * rel(1)),
+    plot.title = element_text(color = "black", size = 15))
+```
+
+
+SENSITIVITY between models after outlier removal
+```{r}
+summary(l_mod1)
+summary(l_mod1_no_outliers)
+
+summary(l_mod1)$deviance     # full model
+summary(l_mod1_no_outliers)$deviance 
+
+ 1- (l_mod1_no_outliers$deviance/l_mod1_no_outliers$null.deviance)
+ 1- (l_mod1$deviance/l_mod1$null.deviance)
+
+ 
+```
+
+
 
 ```{r}
 # Extract the coefficients table
@@ -595,7 +607,7 @@ In summary, l_mod1 is considered the better model based on the ratios of devianc
 
 ```{r}
 # Extract coefficients, standard errors, p-values, and significance levels
-coefficients <- coef(summary(l_mod1))
+coefficients <- coef(summary(l_mod1_no_outliers))
 coefficients <- as.data.frame(coefficients)
 
 # Rename columns
@@ -619,7 +631,7 @@ print(coefficients)
 
 ```{r}
 #plot coefficients
-coefficients <- summary(l_mod1)$coefficients[, c("Estimate", "Std. Error")]
+coefficients <- summary(l_mod1_no_outliers)$coefficients[, c("Estimate", "Std. Error")]
 coefficients 
 # Create a data frame
 coefficients_df <- data.frame(
@@ -639,7 +651,7 @@ CoefficientsandConfidence_Intervals_Treg <- ggplot(coefficients_df, aes(x = reor
   geom_pointrange() +
   geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
   coord_flip() +
-  labs(title = "CD19+ Estimated Effects",
+  labs(title = "CD4+ CD44+ Estimated Effects",
        x = "Variable",
        y = "Estimated Coefficient") +
   theme_bw() +
@@ -664,10 +676,10 @@ CoefficientsandConfidence_Intervals_Treg
 # Residual Plots
 ```{r echo=TRUE}
 # Create a residual vs fitted plot
-residuals <- residuals(l_mod1)
+residuals <- residuals(l_mod1_no_outliers)
 
-dev_res <- residuals(l_mod1, type = "deviance")
-fitted_values <- fitted(l_mod1)
+dev_res <- residuals(l_mod1_no_outliers, type = "deviance")
+fitted_values <- fitted(l_mod1_no_outliers)
 
 # Create the residuals vs. fitted plot
 plot(fitted_values, dev_res, main = "CD4+ CD44+ Residuals vs. Fitted", 
@@ -693,7 +705,7 @@ combinations <- expand.grid(sex = levels(t_cell_activation$sex),
 
 results <- combinations %>%
   rowwise() %>%
-  mutate(probability = (round(100 * predict(l_mod1, newdata = data.frame(sex, day, group), type = "response"))))
+  mutate(probability = (round(100 * predict(l_mod1_no_outliers, newdata = data.frame(sex, day, group), type = "response"))))
 
 # Create a heatmap
 Treg_probability_heatmap <- ggplot(results, aes(x = day, y = group)) +
@@ -724,23 +736,23 @@ Treg_probability_heatmap
 
 ```{r}
 # Generate effect plots for different levels of 'day'
-plotSex_day14 <- effect_plot(l_mod1, pred = sex, at = list(day = "14"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 14")
-plotSex_day56 <- effect_plot(l_mod1, pred = sex, at = list(day = "56"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 56")
-plotSex_day90 <- effect_plot(l_mod1, pred = sex, at = list(day = "90"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 90")
+plotSex_day14 <- effect_plot(l_mod1_no_outliers, pred = sex, at = list(day = "14"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 14")
+plotSex_day56 <- effect_plot(l_mod1_no_outliers, pred = sex, at = list(day = "56"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 56")
+plotSex_day90 <- effect_plot(l_mod1_no_outliers, pred = sex, at = list(day = "90"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 90")
 
 # Generate effect plots for different levels of 'day' and 'group'
-effect_plot(l_mod1, pred = sex, at = list(day = "14", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 14")
-effect_plot(l_mod1, pred = sex, at = list(day = "56", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 56")
-effect_plot(l_mod1, pred = sex, at = list(day = "90", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 90")
+effect_plot(l_mod1_no_outliers, pred = sex, at = list(day = "14", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 14")
+effect_plot(l_mod1_no_outliers, pred = sex, at = list(day = "56", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 56")
+effect_plot(l_mod1_no_outliers, pred = sex, at = list(day = "90", group = "BCG+ID93-GLA-SE"), interval = TRUE, y.label = "Probability of Activated T-cells at Day 90")
 
 
 t_cell_activation
 #Plot and interpret effects
-plotGroup <- effect_plot(l_mod1, pred = group, interval = TRUE, y.label = "Probability of Activated T-cells")
-plotSex <- effect_plot(l_mod1, pred = sex, interval = TRUE, y.label = "Probability of Activated T-cells")
-plotDay <- effect_plot(l_mod1, pred = day, interval = TRUE, y.label = "Probability of Activated T-cells")
+plotGroup <- effect_plot(l_mod1_no_outliers, pred = group, interval = TRUE, y.label = "Probability of Activated T-cells")
+plotSex <- effect_plot(l_mod1_no_outliers, pred = sex, interval = TRUE, y.label = "Probability of Activated T-cells")
+plotDay <- effect_plot(l_mod1_no_outliers, pred = day, interval = TRUE, y.label = "Probability of Activated T-cells")
 # Generate effect plot
-effect <- effect_plot(l_mod1, pred = "sex", interval = TRUE, y.label = "Probability of CD19+ B-cells")
+effect <- effect_plot(l_mod1_no_outliers, pred = "sex", interval = TRUE, y.label = "Probability of CD19+ B-cells")
 
 # Extract data from the effect plot
 ggplot_build(effect)$data[[1]]
@@ -768,7 +780,7 @@ print(effect_with_text)
 
 # Generate predictions
 predictor_terms <- c("day", "group", "sex")
-predictions <- ggpredict(l_mod1, terms = predictor_terms)
+predictions <- ggpredict(l_mod1_no_outliers, terms = predictor_terms)
 #predictions1 <- ggemmeans(l_mod2, terms = predictor_terms)
 
 plot(predictions) +
@@ -813,12 +825,12 @@ Treg_predictions
 
 # Calculate the odds ratios and plot 
 ```{r echo=TRUE}
-CI <- exp(confint(l_mod1))
+CI <- exp(confint(l_mod1_no_outliers))
 # Extract coefficients
-coefficients <- summary(l_mod1)$coef
+coefficients <- summary(l_mod1_no_outliers)$coef
 
 # Define a significance threshold (e.g., 0.05)
-significance_threshold <- 5
+significance_threshold <- 0.05
 
 # Filter significant coefficients
 significant_coefficients <- coefficients[coefficients[, 4] < significance_threshold, ]
@@ -881,7 +893,7 @@ Treg_significant_odds_ratios <- ggplot(odds_data, aes(x = odds_ratio, y = variab
        x = "Odds Ratio",
        y = "Variable") +
   scale_x_continuous(breaks = c(0, 1, 2, 5, 10, 15)) +
- # geom_text(aes(label = round(odds_ratio, 2)), vjust = -0.5, color = "black") +
+ geom_text(aes(label = round(odds_ratio, 2)), vjust = -0.5, color = "black") +
   theme_minimal() +
   theme(
     strip.text = element_text(color = "black", size = 1.3 * rel(1)),
