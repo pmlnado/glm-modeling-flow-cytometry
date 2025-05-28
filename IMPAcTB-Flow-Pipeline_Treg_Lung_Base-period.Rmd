@@ -521,6 +521,7 @@ common_samples <- inner_join(
   t_cell_activation_no_outliers,
   by = c("group", "mouse_ID", "sex", "day")
 )
+
 ```
 
 plot with removed outliers
