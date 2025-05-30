@@ -1,6 +1,6 @@
 # Generalized Linear Modeling for Flow Cytometry data to Analyze Multivariable Influences on Immune Responses
 
-This repository contains the code and data analysis pipeline used to assess immune responses following tuberculosis (TB) vaccination in mice. The study explores the use of Generalized Linear Models (GLMs) to analyze high-dimensional flow cytometry data, with a focus on activated T cells in the lungs post-Mycobacterium tuberculosis (Mtb) infection.
+This repository contains the code and data analysis pipeline used to assess immune responses following tuberculosis (TB) vaccination in mice. The study explores the use of Generalized Linear Models (GLMs) to analyze high-dimensional flow cytometry data, with a focus on activated T cells in the lungs post-*Mycobacterium tuberculosis* (Mtb) infection.
 
 GLMs were used to evaluate the effects of sex, vaccine type, and days post-infection on immune cell phenotype probabilities, addressing non-normality and other violations of classical statistical assumptions. This framework provides a flexible, robust approach for modeling complex immunological data and supports the discovery of critical factors influencing vaccine efficacy.
 
