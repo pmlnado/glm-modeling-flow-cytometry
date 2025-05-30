@@ -30,7 +30,6 @@ Flow cytometry was used to quantify leukocytes from lung samples. This repositor
 
 ├── Base_period_Treg/         # Folder containing raw CSV files by condition
 ├── analysis.Rmd              # Full R Markdown analysis script
-├── output/                   # (Optional) Directory for saving plots and outputs
 └── README.md                 # This file
 
 
