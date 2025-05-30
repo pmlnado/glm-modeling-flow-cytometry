@@ -21,7 +21,7 @@ This repository includes data and code from a murine tuberculosis vaccine study.
 
 Mice were subsequently infected with *Mycobacterium tuberculosis* and immune responses were assessed at **14**, **56**, and **90** days post-infection. Both male and female mice were included in the study.
 
-Flow cytometry was used to quantify leukocytes from lung samples. This repository provides the full GLM framework in R, from data preprocessing to visualization and statistical testing.
+High-dimensional flow cytometry was used to quantify immune cell phenotypes and their corresponding proportions of parent populations from mouse lung samples at each experimental endpoint. This repository provides a complete GLM framework in R, which uses these counts to model successes, failures, and trials. Here, we guide the user through data preprocessing, visualization, and statistical analysis.
 
 ---
 
