@@ -2,7 +2,7 @@
 
 This repository contains the code and data analysis pipeline used to assess immune responses following tuberculosis (TB) vaccination in mice. The study explores the use of Generalized Linear Models (GLMs) to analyze high-dimensional flow cytometry data, with a focus on activated T cells in the lungs post-*Mycobacterium tuberculosis* (Mtb) infection.
 
-GLMs were used to evaluate the effects of sex, vaccine type, and days post-infection on immune cell phenotype probabilities, addressing non-normality and other violations of classical statistical assumptions. This framework provides a flexible, robust approach for modeling complex immunological data and supports the discovery of critical factors influencing vaccine efficacy.
+GLMs were used to evaluate the effects of sex, vaccine type, and days post-infection on immune cell phenotype probabilities, addressing non-normality and other violations of classical statistical assumptions. This framework provides a flexible, robust approach for modeling complex immunological data and supports the discovery of factors that influence vaccine efficacy.
 
 R code and associated data (excluding raw `.fcs` files) are released under an MIT License. If you use the R code and/or data from this repository, please cite:
 
@@ -21,7 +21,7 @@ This repository includes data and code from a murine tuberculosis vaccine study.
 
 Mice were subsequently infected with *Mycobacterium tuberculosis* and immune responses were assessed at **14**, **56**, and **90** days post-infection. Both male and female mice were included in the study.
 
-High-dimensional flow cytometry was used to quantify immune cell phenotypes and their corresponding proportions of parent populations from mouse lung samples at each experimental endpoint. This repository provides a complete GLM framework in R, which uses these counts to model successes, failures, and trials. Here, we guide the user through data preprocessing, visualization, and statistical analysis.
+High-dimensional flow cytometry was used to quantify immune cell phenotypes and their corresponding proportions of parent populations from mouse lung samples at each experimental endpoint. This repository provides a complete GLM framework in R, which uses these counts to model successes, failures, and trials. Here, we guide the user through data preprocessing, visualization, and statistical analysis to provide odds ratios and probabilities assicoated with vaccination regimen, sex, and days post vaccination.
 
 ---
 
