@@ -1,10 +1,12 @@
-# T-Cell Activation Analysis: Evaluating Vaccine-Induced Immune Responses in Mice
+# Generalized Linear Modeling for Flow Cytometry data to Analyze Multivariable Influences on Immune Responses
 
-This repository contains the code used to analyze flow cytometry data and generate figures for a project evaluating the immune response to tuberculosis vaccination in mice. The study focuses on CD8⁺ T-cell activation (CD3⁺CD4⁻CD8⁺) across different vaccine formulations and biological sexes over time.
+This repository contains the code and data analysis pipeline used to assess immune responses following tuberculosis (TB) vaccination in mice. The study explores the use of Generalized Linear Models (GLMs) to analyze high-dimensional flow cytometry data, with a focus on activated T cells in the lungs post-Mycobacterium tuberculosis (Mtb) infection.
+
+GLMs were used to evaluate the effects of sex, vaccine type, and days post-infection on immune cell phenotype probabilities, addressing non-normality and other violations of classical statistical assumptions. This framework provides a flexible, robust approach for modeling complex immunological data and supports the discovery of critical factors influencing vaccine efficacy.
 
 R code and associated data (excluding raw `.fcs` files) are released under an MIT License. If you use the R code and/or data from this repository, please cite:
 
-**[Your Name].** *T-Cell Activation Analysis: Evaluating Vaccine-Induced Immune Responses in Mice* (2025). [Include DOI or preprint link if available.]
+**Maldonado et al.** *Modeling Immunity: Generalized Linear Modeling to Analyze Multivariable Influences on Immune Responses in Tuberculosis Vaccine Research * (in preparation). [link]
 
 ---
 
@@ -17,9 +19,9 @@ This repository includes data and code from a murine tuberculosis vaccine study.
 - **ID93 + GLA-SE**
 - **BCG + ID93 + GLA-SE**
 
-Mice were subsequently infected with *Mycobacterium tuberculosis* and immune responses were assessed at **30**, **60**, and **90** days post-infection. Both male and female mice were included in the study.
+Mice were subsequently infected with *Mycobacterium tuberculosis* and immune responses were assessed at **14**, **56**, and **90** days post-infection. Both male and female mice were included in the study.
 
-Flow cytometry was used to quantify activated T cells (CD3⁺CD4⁻CD8⁺) from lung samples. This repository provides the full R analysis pipeline, from data preprocessing to visualization and statistical testing.
+Flow cytometry was used to quantify leukocytes from lung samples. This repository provides the full GLM framework in R, from data preprocessing to visualization and statistical testing.
 
 ---
 
@@ -39,15 +41,19 @@ Flow cytometry was used to quantify activated T cells (CD3⁺CD4⁻CD8⁺) from 
 - **Boxplots**: Proportion of CD3⁺CD4⁻CD8⁺ T cells across vaccine groups and sex  
 - **Shapiro-Wilk tests**: Assessing normality of data  
 - **Levene’s tests**: Testing homogeneity of variances  
-- **Proportion calculations**: Based on parent populations from flow cytometry  
+- **Proportion calculations**: Based on parent populations from flow cytometry
+- **GLM fitting**: Based on selected variables 
+- **Outlier Testing**: Using Cook's distance 
+- **Probability Analysis**: Using built in R functions
+- **Odds Ratio analysis**: Using built in R functions
 
 ---
 
 ## Data Availability
 
-Raw `.csv` files containing flow cytometry gate counts are located in the `Base_period_Treg/` directory. These were exported from `.fcs` files generated on the BD LSRFortessa using FlowJo.
+Raw `.csv` files containing flow cytometry gate counts are located in the `Base_period_Treg/` directory. These were exported from `.fcs` files generated on the a Cytek Aurora and FlowJo.
 
-Due to file size limitations, `.fcs` files are not included in this repository. To request access to raw `.fcs` files, please contact [Your Name] at [Your Email].
+Due to file size limitations, `.fcs` files are not included in this repository. To request access to raw `.fcs` files, please contact Pablo at p.maldonado@colostate.edu.
 
 ---
 
